@@ -28,6 +28,8 @@
     <link rel="stylesheet" href="{{ asset('admin/assets/css/style.css') }}" id="main-style-link" />
     <link rel="stylesheet" href="{{ asset('admin/assets/css/style-preset.css') }}" />
 
+    @vite(['resources/css/back.css', 'resources/js/back.js'])
+
     <!-- Additional CSS -->
     @stack('styles')
 </head>
