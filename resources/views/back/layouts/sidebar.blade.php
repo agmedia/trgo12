@@ -72,8 +72,8 @@
                         <span class="pc-arrow"><i data-feather="chevron-right"></i></span>
                     </a>
                     <ul class="pc-submenu">
-                        <li class="pc-item">
-                            <a class="pc-link {{ $is('catalog.categories.*') ? 'active' : '' }}"
+                        <li class="pc-item {{ $is('catalog.categories.*') ? 'active' : '' }}">
+                            <a class="pc-link"
                                href="{{ route('catalog.categories.index', ['group' => $currentGroup]) }}"
                                data-i18n="Default">
                                 {{ __('back/nav.categories') }}

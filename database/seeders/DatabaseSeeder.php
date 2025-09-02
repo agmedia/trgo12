@@ -20,6 +20,10 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
         ]);
         
+        $this->call([
+            UserSedder::class,
+        ]);
+        
         $this->command?->info('=== Database seed finished ===');
         $this->command?->newLine();
     }

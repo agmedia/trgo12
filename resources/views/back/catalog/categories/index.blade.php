@@ -66,9 +66,7 @@
                                             @if($cat->image)
                                                 <img src="{{ $cat->image }}" alt="" class="rounded" style="width:28px;height:28px;object-fit:cover;">
                                             @else
-                                                <span class="avatar bg-light border rounded" style="width:28px;height:28px;">
-                          <i class="ph-duotone ph-image text-muted"></i>
-                        </span>
+                                                <span class="avatar bg-light border rounded" style="width:28px;height:28px;"><i class="ph-duotone ph-image text-muted"></i></span>
                                             @endif
                                             <div>
                                                 <div class="fw-semibold">{{ $cat->name }}</div>
