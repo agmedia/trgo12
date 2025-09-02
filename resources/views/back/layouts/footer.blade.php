@@ -65,13 +65,13 @@
 <!-- [ Settings Offcanvas ] end -->
 
 <!-- Required Js -->
-<script src="{{ asset('admin/assets/js/plugins/popper.min.js') }}"></script>
-<script src="{{ asset('admin/assets/js/plugins/simplebar.min.js') }}"></script>
-<script src="{{ asset('admin/assets/js/plugins/bootstrap.min.js') }}"></script>
-<script src="{{ asset('admin/assets/js/icon/custom-font.js') }}"></script>
-<script src="{{ asset('admin/assets/js/script.js') }}"></script>
-<script src="{{ asset('admin/assets/js/theme.js') }}"></script>
-<script src="{{ asset('admin/assets/js/plugins/feather.min.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/plugins/popper.min.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/plugins/simplebar.min.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/plugins/bootstrap.min.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/icon/custom-font.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/script.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/theme.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/plugins/feather.min.js') }}"></script>
 
 <!-- Additional Scripts -->
 @stack('scripts')

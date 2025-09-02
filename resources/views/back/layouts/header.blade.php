@@ -53,7 +53,7 @@
                 </li>
                 <li class="dropdown pc-h-item header-user-profile">
                     <a class="pc-head-link dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" data-bs-auto-close="outside" aria-expanded="false">
-                        <img src="{{ asset('admin/assets/images/user/avatar-2.jpg') }}" alt="user-image" class="user-avtar" />
+                        <img src="{{ asset('admin/theme1/assets/images/user/avatar-2.jpg') }}" alt="user-image" class="user-avtar" />
                     </a>
                     <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown">
                         <div class="dropdown-header d-flex align-items-center justify-content-between">
@@ -63,7 +63,7 @@
                             <div class="profile-notification-scroll position-relative" style="max-height: calc(100vh - 225px)">
                                 <div class="d-flex mb-1">
                                     <div class="flex-shrink-0">
-                                        <img src="{{ asset('admin/assets/images/user/avatar-2.jpg') }}" alt="user-image" class="user-avtar wid-35" />
+                                        <img src="{{ asset('admin/theme1/assets/images/user/avatar-2.jpg') }}" alt="user-image" class="user-avtar wid-35" />
                                     </div>
                                     <div class="flex-grow-1 ms-3">
                                         <h6 class="mb-1">{{ Auth::user()->name }}</h6>

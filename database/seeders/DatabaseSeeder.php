@@ -13,11 +13,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->command?->newLine();
+        $this->command?->info('=== Starting database seed ===');
+        
+        $this->call([
+            CategorySeeder::class,
         ]);
+        
+        $this->command?->info('=== Database seed finished ===');
+        $this->command?->newLine();
     }
 }

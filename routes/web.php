@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Back\Catalog\CategoryController;
 use App\Http\Controllers\Back\DashboardController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
@@ -13,6 +14,10 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::match(['get', 'post'], '/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    Route::prefix('catalog')->as('catalog.')->group(function () {
+        Route::resource('categories', CategoryController::class)->names('categories');
+    });
     
     Route::redirect('settings', 'settings/profile')->name('settings');
 

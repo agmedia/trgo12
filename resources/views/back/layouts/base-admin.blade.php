@@ -9,26 +9,27 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Favicon & Manifest -->
-    <link rel="icon" href="{{ asset('admin/assets/images/favicon.svg') }}" type="image/x-icon" />
+    <link rel="icon" href="{{ asset('admin/theme1/assets/images/favicon.svg') }}" type="image/x-icon" />
 
     <!-- Font Family -->
-    <link rel="stylesheet" href="{{ asset('admin/assets/fonts/inter/inter.css') }}" id="main-font-link" />
+    <link rel="stylesheet" href="{{ asset('admin/theme1/assets/fonts/inter/inter.css') }}" id="main-font-link" />
     <!-- phosphor Icons -->
-    <link rel="stylesheet" href="{{ asset('admin/assets/fonts/phosphor/duotone/style.css') }}" />
+    <link rel="stylesheet" href="{{ asset('admin/theme1/assets/fonts/phosphor/duotone/style.css') }}" />
     <!-- Tabler Icons -->
-    <link rel="stylesheet" href="{{ asset('admin/assets/fonts/tabler-icons.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('admin/theme1/assets/fonts/tabler-icons.min.css') }}" />
     <!-- Feather Icons -->
-    <link rel="stylesheet" href="{{ asset('admin/assets/fonts/feather.css') }}" />
+    <link rel="stylesheet" href="{{ asset('admin/theme1/assets/fonts/feather.css') }}" />
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="{{ asset('admin/assets/fonts/fontawesome.css') }}" />
+    <link rel="stylesheet" href="{{ asset('admin/theme1/assets/fonts/fontawesome.css') }}" />
     <!-- Material Icons -->
-    <link rel="stylesheet" href="{{ asset('admin/assets/fonts/material.css') }}" />
+    <link rel="stylesheet" href="{{ asset('admin/theme1/assets/fonts/material.css') }}" />
 
     <!-- Template CSS Files -->
-    <link rel="stylesheet" href="{{ asset('admin/assets/css/style.css') }}" id="main-style-link" />
-    <link rel="stylesheet" href="{{ asset('admin/assets/css/style-preset.css') }}" />
+    <link rel="stylesheet" href="{{ asset('admin/theme1/assets/css/style.css') }}" id="main-style-link" />
+    <link rel="stylesheet" href="{{ asset('admin/theme1/assets/css/style-preset.css') }}" />
 
-    @vite(['resources/css/back.css', 'resources/js/back.js'])
+    @livewireStyles
+    @livewireScripts
 
     <!-- Additional CSS -->
     @stack('styles')
