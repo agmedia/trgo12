@@ -22,8 +22,8 @@ return new class extends Migration
         });
         
         Schema::create('user_details', function (Blueprint $table) {
-            $table->increments('id');
-            $table->unsignedInteger('user_id');
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('fname');
             $table->string('lname')->nullable();
             $table->string('address')->nullable();
@@ -31,12 +31,14 @@ return new class extends Migration
             $table->string('city')->nullable();
             $table->string('state')->nullable();
             $table->string('phone')->nullable();
-            $table->string('avatar')->default('images/avatars/default_avatar.jpg');
+            $table->string('avatar')->default('media/avatars/default_avatar.png');
             $table->longText('bio')->nullable();
-            $table->string('social')->nullable();
-            $table->string('role');
+            $table->string('social')->nullable(); // e.g. JSON string or URL — keep simple for now
+            $table->string('role');               // master|admin|manager|editor|customer
             $table->boolean('status')->default(1);
             $table->timestamps();
+            
+            $table->index(['role', 'status']);
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

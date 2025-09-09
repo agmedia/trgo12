@@ -6,14 +6,20 @@ return [
     'catalog'    => 'Katalog',
     'categories' => 'Kategorije',
     'products'   => 'Artikli',
-    'publishers' => 'Izdavači',
-    'authors'    => 'Autori',
+    'manufacturers' => 'Proizvođači',
     
     'orders'   => 'Narudžbe',
     'marketing'=> 'Marketing',
     'actions'  => 'Akcije',
     'blog'     => 'Blog',
     'widgets'  => 'Widgeti',
+    'currencies' => 'Valute',
+    'languages' => 'Jezici',
+    'taxes' => 'Porezi',
+    'order_statuses' => 'Statusi Narudžbi',
+    'geozones' => 'Geozone',
+    'payments' => 'Načini Plaćanja',
+    'shipping' => 'Načini Dostave',
     
     'users'   => 'Korisnici',
     

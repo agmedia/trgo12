@@ -5,7 +5,7 @@
 @section('content')
     <div class="row g-3">
         <div class="col-12 col-lg-10">
-            <form action="{{ route('catalog.categories.store') }}" method="POST" class="card">
+            <form action="{{ route('catalog.categories.store') }}" method="POST" class="card" enctype="multipart/form-data">
                 @csrf
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h5 class="mb-0">{{ __('back/categories.title_create') }}</h5>

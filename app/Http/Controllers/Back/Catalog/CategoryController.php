@@ -7,189 +7,212 @@ use App\Models\Back\Catalog\Category;
 use App\Models\Back\Catalog\CategoryTranslation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
-    // public function __construct() { $this->middleware(['auth', 'role:admin']); }
-    
-    private array $groups = ['products', 'blog', 'pages', 'footer'];
+    protected array $allowedGroups = ['products','blog','pages','footer'];
     
     public function index(Request $request)
     {
-        $group = $request->get('group', 'products');
-        abort_unless(in_array($group, $this->groups, true), 404);
+        $group = $this->normalizeGroup($request->string('group', 'products'));
         
-        $categories = Category::with('translations')
-            ->forGroup($group)
-            ->get()
-            ->toTree();
+        $categories = Category::with([
+            'translations',
+            'media',
+            'parent.translations',
+            'children.translations',
+            'children.media',
+        ])
+            ->forGroup($group)        // where('group', $group)->defaultOrder()
+            ->defaultOrder()
+            ->get();
         
-        $locales = config('app.locales', [config('app.locale', 'hr')]);
-        
-        return view('back.catalog.categories.index', compact('categories', 'group', 'locales'));
+        return view('back.catalog.categories.index', compact('categories', 'group'));
     }
     
     public function create(Request $request)
     {
-        $group   = $request->get('group', 'products');
-        $locales = config('app.locales', [config('app.locale', 'hr')]);
-        $parents = Category::forGroup($group)->get();
+        $group   = $this->normalizeGroup($request->string('group', 'products'));
+        $parents = Category::with('translations')
+            ->where('group', $group)
+            ->defaultOrder()
+            ->get();
         
-        return view('back.catalog.categories.create', compact('group', 'locales', 'parents'));
+        $category = new Category(['group' => $group, 'is_active' => true]);
+        
+        return view('back.catalog.categories.create', compact('category', 'parents'));
     }
     
     public function store(Request $request)
     {
-        $validated = $this->validatePayload($request);
+        $data = $request->validate([
+            'group'        => ['required', 'in:products,blog,pages,footer'],
+            'parent_id'    => ['nullable', 'exists:categories,id'],
+            'position'     => ['nullable', 'integer'],
+            'is_active'    => ['nullable', 'boolean'],
+            
+            // translated (current locale)
+            'title'            => ['required', 'string', 'max:255'],
+            'slug'             => ['nullable', 'string', 'max:255'],
+            'description'      => ['nullable', 'string'],
+            'seo_title'        => ['nullable', 'string', 'max:255'],
+            'seo_description'  => ['nullable', 'string', 'max:255'],
+            'seo_keywords'     => ['nullable', 'string', 'max:255'],
+            
+            // files
+            'image_file'  => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'icon_file'   => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'banner_file' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:8192'],
+        ]);
         
-        DB::transaction(function () use ($validated, $request) {
-            $category = new Category();
-            $category->fill([
-                'group'     => $validated['group'],
-                'is_active' => $validated['is_active'] ?? false,
-                'is_navbar' => $validated['is_navbar'] ?? false,
-                'is_footer' => $validated['is_footer'] ?? false,
-                'position'  => $validated['position'] ?? 0,
+        $category = DB::transaction(function () use ($request, $data) {
+            $category = Category::create([
+                'group'     => $data['group'],
+                'parent_id' => $data['parent_id'] ?? null,
+                'position'  => $data['position'] ?? 0,
+                'is_active' => (bool)($data['is_active'] ?? true),
             ]);
             
-            if (!empty($validated['parent_id'])) {
-                $parent = Category::findOrFail($validated['parent_id']);
-                $category->appendToNode($parent)->save();
-            } else {
-                $category->save();
+            $locale = app()->getLocale();
+            
+            CategoryTranslation::updateOrCreate(
+                ['category_id' => $category->id, 'locale' => $locale],
+                [
+                    'title'           => $data['title'],
+                    'slug'            => $data['slug'] ?? null,
+                    'description'     => $data['description'] ?? null,
+                    'seo_title'       => $data['seo_title'] ?? null,
+                    'seo_description' => $data['seo_description'] ?? null,
+                    'seo_keywords'    => $data['seo_keywords'] ?? null,
+                    'seo_json'        => null,
+                    'link_url'        => null,
+                ]
+            );
+            
+            // Media (replace if uploaded)
+            if ($request->hasFile('image_file')) {
+                $category->clearMediaCollection('image');
+                $category->addMediaFromRequest('image_file')->toMediaCollection('image');
+            }
+            if ($request->hasFile('icon_file')) {
+                $category->clearMediaCollection('icon');
+                $category->addMediaFromRequest('icon_file')->toMediaCollection('icon');
+            }
+            if ($request->hasFile('banner_file')) {
+                $category->clearMediaCollection('banner');
+                $category->addMediaFromRequest('banner_file')->toMediaCollection('banner');
             }
             
-            foreach ($validated['translations'] as $locale => $t) {
-                CategoryTranslation::create([
-                    'category_id'     => $category->id,
-                    'locale'          => $locale,
-                    'title'           => $t['title'] ?? null,
-                    'slug'            => $t['slug'] ?? ($t['title'] ? Str::slug($t['title']) : null),
-                    'link_url'        => $t['link_url'] ?? null,
-                    'description'     => $t['description'] ?? null,
-                    'seo_title'       => $t['seo_title'] ?? null,
-                    'seo_description' => $t['seo_description'] ?? null,
-                    'seo_keywords'    => $t['seo_keywords'] ?? null,
-                    'seo_json'        => $t['seo_json'] ?? null,
-                ]);
-            }
-            
-            foreach (['image', 'icon', 'banner'] as $field) {
-                if ($request->hasFile($field)) {
-                    $category->addMediaFromRequest($field)->toMediaCollection($field);
-                }
-            }
+            return $category;
         });
         
-        return redirect()
-            ->route('admin.catalog.categories.index', ['group' => $validated['group']])
-            ->with('success', 'Category created.');
+        // ✅ preserve active tab on redirect
+        return redirect()->route('catalog.categories.index', ['group' => $category->group])
+            ->with('success', __('back/categories.flash.created'));
     }
     
     public function edit(Category $category)
     {
-        $group   = $category->group;
-        $locales = config('app.locales', [config('app.locale', 'hr')]);
-        $parents = Category::forGroup($group)->where('id', '!=', $category->id)->get();
+        $group   = $this->normalizeGroup(request()->string('group', $category->group));
+        $parents = Category::with('translations')
+            ->where('group', $group)
+            ->whereKeyNot($category->id)
+            ->defaultOrder()
+            ->get();
         
-        $category->load('translations', 'media');
-        
-        return view('back.catalog.categories.edit', compact('category', 'group', 'locales', 'parents'));
+        return view('back.catalog.categories.edit', compact('category', 'parents'));
     }
     
     public function update(Request $request, Category $category)
     {
-        $validated = $this->validatePayload($request, updating: true);
+        $data = $request->validate([
+            'group'        => ['required', 'in:products,blog,pages,footer'],
+            'parent_id'    => ['nullable', 'exists:categories,id'],
+            'position'     => ['nullable', 'integer'],
+            'is_active'    => ['nullable', 'boolean'],
+            
+            // translated (current locale)
+            'title'            => ['required', 'string', 'max:255'],
+            'slug'             => ['nullable', 'string', 'max:255'],
+            'description'      => ['nullable', 'string'],
+            'seo_title'        => ['nullable', 'string', 'max:255'],
+            'seo_description'  => ['nullable', 'string', 'max:255'],
+            'seo_keywords'     => ['nullable', 'string', 'max:255'],
+            
+            // files + remove toggles
+            'image_file'   => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'icon_file'    => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'banner_file'  => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:8192'],
+            'remove_image' => ['nullable', 'boolean'],
+            'remove_icon'  => ['nullable', 'boolean'],
+            'remove_banner'=> ['nullable', 'boolean'],
+        ]);
         
-        DB::transaction(function () use ($validated, $request, $category) {
-            $category->fill([
-                'group'     => $validated['group'],
-                'is_active' => $validated['is_active'] ?? false,
-                'is_navbar' => $validated['is_navbar'] ?? false,
-                'is_footer' => $validated['is_footer'] ?? false,
-                'position'  => $validated['position'] ?? 0,
+        DB::transaction(function () use ($request, $category, $data) {
+            $category->update([
+                'group'     => $data['group'],
+                'parent_id' => $data['parent_id'] ?? null,
+                'position'  => $data['position'] ?? 0,
+                'is_active' => (bool)($data['is_active'] ?? false),
             ]);
             
-            if (array_key_exists('parent_id', $validated)) {
-                if ($validated['parent_id']) {
-                    $parent = Category::findOrFail($validated['parent_id']);
-                    if (!$category->isDescendantOf($parent)) {
-                        $category->appendToNode($parent)->save();
-                    } else {
-                        $category->save();
-                    }
-                } else {
-                    $category->saveAsRoot();
-                }
-            } else {
-                $category->save();
+            $locale = app()->getLocale();
+            
+            CategoryTranslation::updateOrCreate(
+                ['category_id' => $category->id, 'locale' => $locale],
+                [
+                    'title'           => $data['title'],
+                    'slug'            => $data['slug'] ?? null,
+                    'description'     => $data['description'] ?? null,
+                    'seo_title'       => $data['seo_title'] ?? null,
+                    'seo_description' => $data['seo_description'] ?? null,
+                    'seo_keywords'    => $data['seo_keywords'] ?? null,
+                ]
+            );
+            
+            // remove/replace media
+            if ($request->boolean('remove_image')) {
+                $category->clearMediaCollection('image');
+            }
+            if ($request->hasFile('image_file')) {
+                $category->clearMediaCollection('image');
+                $category->addMediaFromRequest('image_file')->toMediaCollection('image');
             }
             
-            foreach ($validated['translations'] as $locale => $t) {
-                $category->translations()->updateOrCreate(
-                    ['locale' => $locale],
-                    [
-                        'title'           => $t['title'] ?? null,
-                        'slug'            => $t['slug'] ?? ($t['title'] ? Str::slug($t['title']) : null),
-                        'link_url'        => $t['link_url'] ?? null,
-                        'description'     => $t['description'] ?? null,
-                        'seo_title'       => $t['seo_title'] ?? null,
-                        'seo_description' => $t['seo_description'] ?? null,
-                        'seo_keywords'    => $t['seo_keywords'] ?? null,
-                        'seo_json'        => $t['seo_json'] ?? null,
-                    ]
-                );
+            if ($request->boolean('remove_icon')) {
+                $category->clearMediaCollection('icon');
+            }
+            if ($request->hasFile('icon_file')) {
+                $category->clearMediaCollection('icon');
+                $category->addMediaFromRequest('icon_file')->toMediaCollection('icon');
             }
             
-            foreach (['image', 'icon', 'banner'] as $field) {
-                if ($request->hasFile($field)) {
-                    $category->clearMediaCollection($field);
-                    $category->addMediaFromRequest($field)->toMediaCollection($field);
-                }
+            if ($request->boolean('remove_banner')) {
+                $category->clearMediaCollection('banner');
+            }
+            if ($request->hasFile('banner_file')) {
+                $category->clearMediaCollection('banner');
+                $category->addMediaFromRequest('banner_file')->toMediaCollection('banner');
             }
         });
         
-        return redirect()
-            ->route('admin.catalog.categories.index', ['group' => $validated['group']])
-            ->with('success', 'Category updated.');
+        // ✅ preserve active tab on redirect (after possible group change)
+        return redirect()->route('catalog.categories.index', ['group' => $category->group])
+            ->with('success', __('back/categories.flash.updated'));
     }
     
     public function destroy(Category $category)
     {
-        $group = $category->group;
+        $group = $category->group; // keep before delete
         $category->delete();
         
-        return redirect()
-            ->route('admin.catalog.categories.index', ['group' => $group])
-            ->with('success', 'Category deleted.');
+        // ✅ keep tab
+        return redirect()->route('catalog.categories.index', ['group' => $group])
+            ->with('success', __('back/categories.flash.deleted'));
     }
     
-    private function validatePayload(Request $request, bool $updating = false): array
+    private function normalizeGroup(string $group): string
     {
-        $locales = config('app.locales', [config('app.locale', 'hr')]);
-        
-        $rules = [
-            'group'      => 'required|string|in:products,blog,pages,footer',
-            'parent_id'  => 'nullable|integer|exists:categories,id',
-            'is_active'  => 'sometimes|boolean',
-            'is_navbar'  => 'sometimes|boolean',
-            'is_footer'  => 'sometimes|boolean',
-            'position'   => 'sometimes|integer|min:0',
-            'translations' => 'required|array',
-        ];
-        
-        foreach ($locales as $locale) {
-            $rules["translations.$locale.title"]           = $updating ? 'nullable|string|max:255' : 'required|string|max:255';
-            $rules["translations.$locale.slug"]            = 'nullable|string|max:255';
-            $rules["translations.$locale.link_url"]        = 'nullable|url|max:2048';
-            $rules["translations.$locale.description"]     = 'nullable|string';
-            $rules["translations.$locale.seo_title"]       = 'nullable|string|max:255';
-            $rules["translations.$locale.seo_description"] = 'nullable|string|max:255';
-            $rules["translations.$locale.seo_keywords"]    = 'nullable|string|max:255';
-            $rules["translations.$locale.seo_json"]        = 'nullable|array';
-        }
-        
-        return $request->validate($rules);
+        return in_array($group, $this->allowedGroups, true) ? $group : 'products';
     }
 }

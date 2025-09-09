@@ -2,6 +2,8 @@
 
 @extends('back.layouts.base-admin')
 
+@section('title', __('back/common.dashboard'))
+
 @section('content')
     <!-- [ breadcrumb ] start -->
     <div class="page-header">
@@ -40,6 +42,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="mb-0">@lang('back/common.dashboard')</h5>
+                    <p class="text-muted mb-0">Admin dashboard loaded.</p>
+                </div>
+            </div>
 
         </div>
     </div>

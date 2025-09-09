@@ -6,14 +6,20 @@ return [
     'catalog'    => 'Catalog',
     'categories' => 'Categories',
     'products'   => 'Products',
-    'publishers' => 'Publishers',
-    'authors'    => 'Authors',
-    
+    'manufacturers' => 'Manufacturers',
+
     'orders'   => 'Orders',
     'marketing'=> 'Marketing',
     'actions'  => 'Actions',
     'blog'     => 'Blog',
     'widgets'  => 'Widgets',
+    'currencies' => 'Currencies',
+    'languages' => 'Languages',
+    'taxes' => 'Taxes',
+    'order_statuses' => 'Order Statuses',
+    'geozones' => 'Geozones',
+    'payments' => 'Payment Methods',
+    'shipping' => 'Shipping Methods',
     
     'users'   => 'Users',
     

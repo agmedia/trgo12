@@ -1,8 +1,3 @@
-'use strict';
-
-// =======================================================
-// Custom icon js start
-// =======================================================
 document.write(`
 <div class="d-none">
 <?xml version="1.0" standalone="no"?>
@@ -477,5 +472,3 @@ document.write(`
 </svg>
 </div>
 `);
-// Custom icon js end
-// =======================================================

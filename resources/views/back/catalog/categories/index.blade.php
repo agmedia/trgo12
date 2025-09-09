@@ -3,6 +3,12 @@
 @section('title', __('back/categories.title'))
 
 @section('content')
+    @php
+        // Build a tree from the flat collection returned by the controller
+        // (works as long as the query uses defaultOrder()).
+        $tree = $categories->toTree();
+    @endphp
+
     <div class="row g-3">
         <div class="col-12">
             <div class="card">
@@ -23,7 +29,6 @@
                     </div>
                 </div>
 
-                {{-- group filter --}}
                 <div class="card-body border-bottom pb-0">
                     @php $groups = ['products','blog','pages','footer']; @endphp
                     <ul class="nav nav-pills flex-wrap">
@@ -58,85 +63,8 @@
                             </tr>
                             </thead>
                             <tbody>
-                            @forelse($categories as $cat)
-                                <tr>
-                                    <td>{{ $cat->id }}</td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            @if($cat->image)
-                                                <img src="{{ $cat->image }}" alt="" class="rounded" style="width:28px;height:28px;object-fit:cover;">
-                                            @else
-                                                <span class="avatar bg-light border rounded" style="width:28px;height:28px;"><i class="ph-duotone ph-image text-muted"></i></span>
-                                            @endif
-                                            <div>
-                                                <div class="fw-semibold">{{ $cat->name }}</div>
-                                                @if($cat->slug)
-                                                    <div class="text-muted small">{{ $cat->slug }}</div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge bg-secondary text-uppercase">{{ $cat->group }}</span></td>
-                                    <td>{{ optional($cat->parent)->name ?: __('back/common.none') }}</td>
-                                    <td>{{ $cat->sort_order }}</td>
-                                    <td>
-                                        @if($cat->is_active)
-                                            <span class="badge bg-success">{{ __('back/common.status.active') }}</span>
-                                        @else
-                                            <span class="badge bg-outline-secondary">{{ __('back/common.status.hidden') }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-muted">{{ $cat->updated_at?->format('Y-m-d H:i') }}</td>
-                                    <td class="text-end">
-                                        <div class="btn-group">
-                                            <a href="{{ route('catalog.categories.edit', [$cat, 'group'=>$group]) }}"
-                                               class="btn btn-sm btn-outline-primary" title="{{ __('back/common.actions.edit') }}">
-                                                <i class="ti ti-edit"></i>
-                                            </a>
-                                            <form action="{{ route('catalog.categories.destroy', $cat) }}" method="POST"
-                                                  onsubmit="return confirm('{{ __('back/categories.confirm_delete') }}')">
-                                                @csrf @method('DELETE')
-                                                <button class="btn btn-sm btn-outline-danger" title="{{ __('back/common.actions.delete') }}">
-                                                    <i class="ti ti-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                @foreach($cat->children as $child)
-                                    <tr>
-                                        <td>{{ $child->id }}</td>
-                                        <td class="ps-5">— {{ $child->name }}</td>
-                                        <td><span class="badge bg-secondary text-uppercase">{{ $child->group }}</span></td>
-                                        <td>{{ optional($child->parent)->name ?: __('back/common.none') }}</td>
-                                        <td>{{ $child->sort_order }}</td>
-                                        <td>
-                                            @if($child->is_active)
-                                                <span class="badge bg-success">{{ __('back/common.status.active') }}</span>
-                                            @else
-                                                <span class="badge bg-outline-secondary">{{ __('back/common.status.hidden') }}</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-muted">{{ $child->updated_at?->format('Y-m-d H:i') }}</td>
-                                        <td class="text-end">
-                                            <div class="btn-group">
-                                                <a href="{{ route('catalog.categories.edit', [$child, 'group'=>$group]) }}"
-                                                   class="btn btn-sm btn-outline-primary" title="{{ __('back/common.actions.edit') }}">
-                                                    <i class="ti ti-edit"></i>
-                                                </a>
-                                                <form action="{{ route('catalog.categories.destroy', $child) }}" method="POST"
-                                                      onsubmit="return confirm('{{ __('back/categories.confirm_delete') }}')">
-                                                    @csrf @method('DELETE')
-                                                    <button class="btn btn-sm btn-outline-danger" title="{{ __('back/common.actions.delete') }}">
-                                                        <i class="ti ti-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-
+                            @forelse($tree as $node)
+                                @include('back.catalog.categories.partials.row', ['node' => $node, 'level' => 0, 'group' => $group])
                             @empty
                                 <tr>
                                     <td colspan="8" class="text-center text-muted py-5">{{ __('back/categories.empty') }}</td>

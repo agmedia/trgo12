@@ -26,9 +26,22 @@ return [
         'cancel'  => 'Odustani',
         'back'    => 'Natrag',
         'delete'  => 'Obriši',
+        'image'         => 'Slika',
+        'icon'          => 'Ikona',
+        'banner'        => 'Baner',
+        'remove_image'  => 'Ukloni sliku',
+        'remove_icon'   => 'Ukloni ikonu',
+        'remove_banner' => 'Ukloni baner',
     ],
     
     'roles' => [
         'administrator' => 'Administrator',
     ],
+
+    'language' => [
+        'label'    => 'Jezik',
+        'english'  => 'Engleski',
+        'croatian' => 'Hrvatski',
+    ],
+
 ];

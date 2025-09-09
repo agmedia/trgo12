@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
-    <title>{{ config('app.name') }} - @yield('title', 'Admin Panel')</title>
+    <title>{{ config('shop.name') }} - @yield('title', 'Admin Panel')</title>
     <!-- Meta -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui" />
@@ -27,9 +27,9 @@
     <!-- Template CSS Files -->
     <link rel="stylesheet" href="{{ asset('admin/theme1/assets/css/style.css') }}" id="main-style-link" />
     <link rel="stylesheet" href="{{ asset('admin/theme1/assets/css/style-preset.css') }}" />
+    <link rel="stylesheet" href="{{ asset('admin/theme1/assets/css/plugins/sweetalert2.css') }}" />
 
     @livewireStyles
-    @livewireScripts
 
     <!-- Additional CSS -->
     @stack('styles')
@@ -59,6 +59,55 @@
 <!-- [ Main Content ] end -->
 
 @include('back.layouts.footer')
+
+@include('back.layouts.offcanvas')
+
+@stack('modals')
+
+<!-- Required Js -->
+<script src="{{ asset('admin/theme1/assets/js/plugins/popper.min.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/plugins/simplebar.min.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/plugins/bootstrap.min.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/icon/custom-font.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/script.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/theme.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/plugins/feather.min.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/plugins/choices.min.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/plugins/sweetalert2.js') }}"></script>
+<script src="{{ asset('admin/theme1/assets/js/plugins/axios.js') }}"></script>
+
+<!-- Additional Scripts -->
+@stack('scripts')
+
+@livewireScripts
+
+<script>
+    const confirmPopUp = Swal.mixin({
+        buttonsStyling: false,
+        customClass: {
+            confirmButton: 'btn btn-success m-5',
+            cancelButton: 'btn btn-danger m-5',
+            input: 'form-control'
+        }
+    })
+
+    const successToast = Swal.mixin({
+        position: 'top-end',
+        icon: 'success',
+        width: 270,
+        showConfirmButton: false,
+        timer: 1500
+    })
+
+    const errorToast = Swal.mixin({
+        type: 'error',
+        timer: 3000,
+        position: 'top-end',
+        showConfirmButton:false,
+        toast: true,
+    })
+
+</script>
 
 </body>
 </html>

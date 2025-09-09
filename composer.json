@@ -21,7 +21,7 @@
         "phpoffice/phpspreadsheet": "^5.0",
         "silber/bouncer": "^1.0",
         "spatie/laravel-medialibrary": "^11.12.5",
-        "spatie/laravel-permission": "^6.21"
+        "spatie/laravel-permission": "^6.0"
     },
 
     "require-dev": {
@@ -46,7 +46,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Helpers/helpers_functions.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

@@ -26,9 +26,22 @@ return [
         'cancel'  => 'Cancel',
         'back'    => 'Back',
         'delete'  => 'Delete',
+        'image'         => 'Image',
+        'icon'          => 'Icon',
+        'banner'        => 'Banner',
+        'remove_image'  => 'Remove image',
+        'remove_icon'   => 'Remove icon',
+        'remove_banner' => 'Remove banner',
     ],
     
     'roles' => [
         'administrator' => 'Administrator',
     ],
+
+    'language' => [
+        'label'    => 'Language',
+        'english'  => 'English',
+        'croatian' => 'Croatian',
+    ],
+
 ];

@@ -17,11 +17,12 @@ class DatabaseSeeder extends Seeder
         $this->command?->info('=== Starting database seed ===');
         
         $this->call([
+            PermissionSeeder::class,
+            UserSeeder::class,
             CategorySeeder::class,
-        ]);
-        
-        $this->call([
-            UserSedder::class,
+            SettingsSeeder::class,
+            ManufacturerSeeder::class,
+            ProductSeeder::class,
         ]);
         
         $this->command?->info('=== Database seed finished ===');

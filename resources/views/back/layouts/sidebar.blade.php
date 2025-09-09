@@ -32,13 +32,9 @@
                     </div>
                     <div class="collapse pc-user-links" id="pc_sidebar_userlink">
                         <div class="pt-3">
-                            <a href="{{ route('settings.profile') }}">
+                            <a href="{{ route('users.profile') }}">
                                 <i class="ti ti-user"></i>
-                                <span>{{ __('back/nav.user.my_account') }}</span>
-                            </a>
-                            <a href="{{ route('settings') }}">
-                                <i class="ti ti-settings"></i>
-                                <span>{{ __('back/nav.user.settings') }}</span>
+                                <span>@lang('back/common.roles.administrator')</span>
                             </a>
                             <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                 <i class="ti ti-power"></i>
@@ -75,18 +71,23 @@
                         <li class="pc-item {{ $is('catalog.categories.*') ? 'active' : '' }}">
                             <a class="pc-link"
                                href="{{ route('catalog.categories.index', ['group' => $currentGroup]) }}"
-                               data-i18n="Default">
+                               data-i18n="Categories">
                                 {{ __('back/nav.categories') }}
                             </a>
                         </li>
-                        <li class="pc-item">
-                            <a class="pc-link" href="../dashboard/analytics.html" data-i18n="Analytics">{{ __('back/nav.products') }}</a>
+                        <li class="pc-item {{ $is('catalog.products.*') ? 'active' : '' }}">
+                            <a class="pc-link"
+                               href="{{ route('catalog.products.index') }}"
+                               data-i18n="Products">
+                                {{ __('back/nav.products') }}
+                            </a>
                         </li>
-                        <li class="pc-item">
-                            <a class="pc-link" href="../dashboard/finance.html" data-i18n="Finance">{{ __('back/nav.publishers') }}</a>
-                        </li>
-                        <li class="pc-item">
-                            <a class="pc-link" href="../dashboard/finance.html" data-i18n="Finance">{{ __('back/nav.authors') }}</a>
+                        <li class="pc-item {{ $is('catalog.manufacturers.*') ? 'active' : '' }}">
+                            <a class="pc-link"
+                               href="{{ route('catalog.manufacturers.index') }}"
+                               data-i18n="Manufacturers">
+                                {{ __('back/nav.manufacturers') }}
+                            </a>
                         </li>
                     </ul>
                 </li>
@@ -106,13 +107,12 @@
                     </a>
                     <ul class="pc-submenu">
                         <li class="pc-item"><a class="pc-link" href="../dashboard/index.html" data-i18n="Default">{{ __('back/nav.actions') }}</a></li>
-                        <li class="pc-item"><a class="pc-link" href="../dashboard/analytics.html" data-i18n="Analytics">{{ __('back/nav.blog') }}</a></li>
-                        <li class="pc-item"><a class="pc-link" href="../dashboard/analytics.html" data-i18n="Analytics">{{ __('back/nav.widgets') }}</a></li>
+                        <li class="pc-item"><a class="pc-link" href="../dashboard/index.html" data-i18n="Default">{{ __('back/nav.actions') }}</a></li>
                     </ul>
                 </li>
 
-                <li class="pc-item">
-                    <a href="#{{--{{ route('apartments.index') }}--}}" class="pc-link">
+                <li class="pc-item {{ $is('users.*') ? 'active' : '' }}">
+                    <a href="{{ route('users.index') }}" class="pc-link">
                         <span class="pc-micon"><svg class="pc-icon"><use xlink:href="#custom-profile-2user-outline"></use></svg></span>
                         <span class="pc-mtext">{{ __('back/nav.users') }}</span>
                     </a>
@@ -126,17 +126,6 @@
                     </svg>
                 </li>
 
-                <li class="pc-item">
-                    <a href="{{ route('settings') }}" class="pc-link">
-                        <span class="pc-micon">
-                            <svg class="pc-icon">
-                                <use xlink:href="#custom-user"></use>
-                            </svg>
-                        </span>
-                        <span class="pc-mtext">{{ __('back/nav.my_profile') }}</span>
-                    </a>
-                </li>
-
                 <li class="pc-item pc-hasmenu">
                     <a href="#!" class="pc-link">
                         <span class="pc-micon"><svg class="pc-icon"><use xlink:href="#custom-setting-2"></use></svg></span>
@@ -145,23 +134,64 @@
                     </a>
                     <ul class="pc-submenu">
                         <li class="pc-item"><a class="pc-link" href="../dashboard/index.html" data-i18n="Default">{{ __('back/nav.actions') }}</a></li>
-                        <li class="pc-item"><a class="pc-link" href="../dashboard/analytics.html" data-i18n="Analytics">{{ __('back/nav.blog') }}</a></li>
-                        <li class="pc-item"><a class="pc-link" href="../dashboard/analytics.html" data-i18n="Analytics">{{ __('back/nav.widgets') }}</a></li>
+                        <li class="pc-item"><a class="pc-link" href="../dashboard/index.html" data-i18n="Default">{{ __('back/nav.actions') }}</a></li>
                     </ul>
                 </li>
 
-                <li class="pc-item pc-hasmenu">
+                <li class="pc-item pc-hasmenu {{ request()->routeIs('settings.*') ? 'pc-trigger active' : '' }}">
                     <a href="#!" class="pc-link">
                         <span class="pc-micon"><svg class="pc-icon"><use xlink:href="#custom-presentation-chart"></use></svg></span>
-                        <span class="pc-mtext" data-i18n="Dashboard">{{ __('back/nav.shop') }}</span>
+                        <span class="pc-mtext">{{ __('back/nav.shop') }}</span>
                         <span class="pc-arrow"><i data-feather="chevron-right"></i></span>
                     </a>
+
                     <ul class="pc-submenu">
-                        <li class="pc-item"><a class="pc-link" href="../dashboard/index.html" data-i18n="Default">{{ __('back/nav.actions') }}</a></li>
-                        <li class="pc-item"><a class="pc-link" href="../dashboard/analytics.html" data-i18n="Analytics">{{ __('back/nav.blog') }}</a></li>
-                        <li class="pc-item"><a class="pc-link" href="../dashboard/analytics.html" data-i18n="Analytics">{{ __('back/nav.widgets') }}</a></li>
+                        <li class="pc-item {{ request()->routeIs('settings.geozones.*') ? 'active' : '' }}">
+                            <a class="pc-link" href="{{ route('settings.geozones.index') }}">
+                                {{ __('back/nav.geozones') }}
+                            </a>
+                        </li>
+
+                        {{-- Currencies (Settings → Currencies) --}}
+                        <li class="pc-item {{ request()->routeIs('settings.currencies.*') ? 'active' : '' }}">
+                            <a class="pc-link" href="{{ route('settings.currencies.index') }}">
+                                {{ __('back/nav.currencies') }}
+                            </a>
+                        </li>
+
+                        <li class="pc-item {{ request()->routeIs('settings.languages.*') ? 'active' : '' }}">
+                            <a class="pc-link" href="{{ route('settings.languages.index') }}">
+                                {{ __('back/nav.languages') }}
+                            </a>
+                        </li>
+
+                        <li class="pc-item {{ request()->routeIs('settings.taxes.*') ? 'active' : '' }}">
+                            <a class="pc-link" href="{{ route('settings.taxes.index') }}">
+                                {{ __('back/nav.taxes') }}
+                            </a>
+                        </li>
+
+                        <li class="pc-item {{ request()->routeIs('settings.statuses.*') ? 'active' : '' }}">
+                            <a class="pc-link" href="{{ route('settings.statuses.index') }}">
+                                {{ __('back/nav.order_statuses') }}
+                            </a>
+                        </li>
+
+                        <li class="pc-item {{ request()->routeIs('settings.payments.*') ? 'active' : '' }}">
+                            <a class="pc-link" href="{{ route('settings.payments.index') }}">
+                                {{ __('back/nav.payments') }}
+                            </a>
+                        </li>
+
+                        <li class="pc-item {{ request()->routeIs('settings.shipping.*') ? 'active' : '' }}">
+                            <a class="pc-link" href="{{ route('settings.shipping.index') }}">
+                                {{ __('back/nav.shipping') }}
+                            </a>
+                        </li>
+
                     </ul>
                 </li>
+
 
             </ul>
         </div>

@@ -51,6 +51,28 @@
                         </a>
                     </div>
                 </li>
+                <li class="dropdown pc-h-item">
+                    <form id="locale-form" class="d-none" method="POST" action="{{ route('locale.switch') }}">
+                        @csrf
+                        <input type="hidden" name="locale" id="locale-input">
+                    </form>
+                    <a class="pc-head-link dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+                        {{--<i class="ti ti-language"></i>
+                        <span class="d-none d-sm-inline">{{ strtoupper(shop()->getLocale()) }}</span>--}}
+                        <svg class="pc-icon">
+                            <use xlink:href="#custom-language"></use>
+                        </svg>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end pc-h-dropdown">
+                        <a href="#" class="dropdown-item" onclick="event.preventDefault(); changeLocale('en')">
+                            <span class="me-2">🇬🇧</span> @lang('back/common.language.english')
+                        </a>
+                        <a href="#" class="dropdown-item" onclick="event.preventDefault(); changeLocale('hr')">
+                            <span class="me-2">🇭🇷</span> @lang('back/common.language.croatian')
+                        </a>
+                    </div>
+                </li>
+
                 <li class="dropdown pc-h-item header-user-profile">
                     <a class="pc-head-link dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" data-bs-auto-close="outside" aria-expanded="false">
                         <img src="{{ asset('admin/theme1/assets/images/user/avatar-2.jpg') }}" alt="user-image" class="user-avtar" />
@@ -72,20 +94,12 @@
                                 </div>
                                 <hr class="border-secondary border-opacity-50" />
                                 <p class="text-span">Manage</p>
-                                <a href="{{ route('settings.profile') }}" class="dropdown-item">
+                                <a href="{{ route('users.profile') }}" class="dropdown-item">
                                         <span>
                                             <svg class="pc-icon text-muted me-2">
                                                 <use xlink:href="#custom-user"></use>
                                             </svg>
-                                            <span>Profile</span>
-                                        </span>
-                                </a>
-                                <a href="{{ route('settings') }}" class="dropdown-item">
-                                        <span>
-                                            <svg class="pc-icon text-muted me-2">
-                                                <use xlink:href="#custom-setting-2"></use>
-                                            </svg>
-                                            <span>Settings</span>
+                                            <span>@lang('back/common.roles.administrator')</span>
                                         </span>
                                 </a>
                                 <hr class="border-secondary border-opacity-50" />
@@ -109,3 +123,12 @@
     </div>
 </header>
 <!-- [ Header ] end -->
+
+@push('scripts')
+    <script>
+        function changeLocale(lc) {
+            document.getElementById('locale-input').value = lc;
+            document.getElementById('locale-form').submit();
+        }
+    </script>
+@endpush

@@ -2,61 +2,62 @@
 
 namespace App\Models\Back\Catalog;
 
-
 use Illuminate\Database\Eloquent\Model;
 use Kalnoy\Nestedset\NodeTrait;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+// ✅ import Spatie's Media model (alias to avoid namespace confusion)
+use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
+use Spatie\Image\Enums\Fit; // for ->fit(Fit::Crop, ...)
 
 class Category extends Model implements HasMedia
 {
-    use NodeTrait;
-    use InteractsWithMedia;
-    
+    use NodeTrait, InteractsWithMedia;
     
     protected $fillable = [
-        'group', 'is_active', 'is_navbar', 'is_footer', 'position', 'parent_id',
+        'group','is_active','is_navbar','is_footer','position','parent_id',
     ];
-    
     
     protected $casts = [
         'is_active' => 'bool',
         'is_navbar' => 'bool',
         'is_footer' => 'bool',
-        'position' => 'int',
+        'position'  => 'int',
     ];
-
-
-// Relationships
+    
     public function translations()
     {
         return $this->hasMany(CategoryTranslation::class);
     }
-
-
-// Helper to get translation for a locale (falls back to app fallback)
+    
     public function translation(?string $locale = null): ?CategoryTranslation
     {
-        $locale = $locale ?: app()->getLocale();
+        $locale   = $locale ?: app()->getLocale();
         $fallback = config('app.fallback_locale');
+        
         return $this->translations->firstWhere('locale', $locale)
             ?? $this->translations->firstWhere('locale', $fallback);
     }
-
-
-// Scopes
+    
     public function scopeForGroup($query, string $group)
     {
         return $query->where('group', $group)->defaultOrder();
     }
-
-
-// Media collections
+    
+    // Media Library
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('image')->singleFile();
         $this->addMediaCollection('icon')->singleFile();
         $this->addMediaCollection('banner')->singleFile();
+    }
+    
+    // ✅ correct signature
+    public function registerMediaConversions(?SpatieMedia $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->fit(Fit::Crop, 64, 64)
+            ->nonQueued(); // in dev, generate immediately
     }
 }

@@ -1,13 +1,16 @@
 <?php
 
 return [
-    'title'        => 'Kategorije',
-    'title_create' => 'Kreiraj kategoriju',
-    'title_edit'   => 'Uredi kategoriju',
-    'group_label'  => 'Grupa',
-    'empty'        => 'Još nema kategorija.',
-    'confirm_delete' => 'Obrisati ovu kategoriju?',
+    // Naslovi stranica
+    'title'         => 'Kategorije',
+    'title_create'  => 'Dodaj kategoriju',
+    'title_edit'    => 'Uredi kategoriju',
     
+    // Manje oznake
+    'group_label'   => 'Grupa',
+    'empty'         => 'Nema kategorija.',
+    
+    // Kartice (grupe kategorija)
     'tabs' => [
         'products' => 'Proizvodi',
         'blog'     => 'Blog',
@@ -15,32 +18,41 @@ return [
         'footer'   => 'Podnožje',
     ],
     
+    // Zaglavlja tablice
     'table' => [
         'id'      => 'ID',
         'name'    => 'Naziv',
         'group'   => 'Grupa',
-        'parent'  => 'Roditelj',
+        'parent'  => 'Nadkategorija',
         'sort'    => 'Redoslijed',
         'status'  => 'Status',
         'updated' => 'Ažurirano',
         'actions' => 'Akcije',
     ],
     
+    // Forma + savjeti
     'form' => [
-        'group'            => 'Grupa',
-        'parent'           => 'Roditelj',
-        'name'             => 'Naziv',
-        'slug'             => 'Slug',
-        'title'            => 'Naslov',
-        'description'      => 'Opis',
-        'image_url'        => 'URL slike',
-        'sort_order'       => 'Redoslijed',
-        'is_active'        => 'Aktivna',
-        'meta_title'       => 'Meta naslov',
-        'meta_description' => 'Meta opis',
-        'meta_keywords'    => 'Meta ključne riječi',
-        'parent_hint'      => 'Odaberite roditelja (maks. 2–3 razine).',
-        'auto_slug_hint'   => 'Ostavite prazno za automatsko generiranje.',
-        'keywords_hint'    => 'Zarezom odvojeno, opcionalno.',
+        'group'          => 'Grupa',
+        'parent'         => 'Nadkategorija',
+        'parent_hint'    => 'Ostavite prazno za kategoriju najviše razine.',
+        'title'          => 'Naslov',
+        'slug'           => 'Slug',
+        'auto_slug_hint' => 'Ako ostavite prazno, generirat će se iz naslova.',
+        'description'    => 'Opis',
+        'image'          => 'Slika',
+        'icon'           => 'Ikona',
+        'banner'         => 'Baner',
+        'sort_order'     => 'Redoslijed',
+        'is_active'      => 'Aktivna',
     ],
+    
+    // Flash poruke
+    'flash' => [
+        'created' => 'Kategorija je dodana.',
+        'updated' => 'Kategorija je ažurirana.',
+        'deleted' => 'Kategorija je obrisana.',
+    ],
+    
+    // Dijalozi
+    'confirm_delete' => 'Obrisati ovu kategoriju? Podkategorije će također biti obrisane. Ova radnja je nepovratna.',
 ];

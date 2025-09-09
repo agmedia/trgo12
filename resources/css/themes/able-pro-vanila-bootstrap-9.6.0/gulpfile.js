@@ -1,426 +1,169 @@
-var gulp = require('gulp');
-var sass = require('gulp-sass')(require('sass'));
-var del = require('del');
-var sourcemaps = require('gulp-sourcemaps');
-var uglify = require('gulp-uglify');
-var cssmin = require('gulp-cssmin');
-var merge = require('merge-stream');
-var babel = require('gulp-babel');
-var npmlodash = require('lodash');
-var smushit = require('gulp-smushit');
-var autoprefixer = require('gulp-autoprefixer');
-var fileinclude = require('gulp-file-include');
-var browsersync = require('browser-sync');
-var htmlmin = require('gulp-htmlmin');
-const { parallel } = require('gulp');
-const fs = require('fs');
+/* Able → Laravel build to public/admin/theme1
+ * - cleans dest
+ * - copies theme assets (fonts/images/js)
+ * - compiles SCSS (explicit entries): style.scss, style-preset.scss
+ * - copies vendor plugins used in base-admin.blade
+ * - rewrites @import "bootstrap/scss/…" to absolute path (rock-solid)
+ */
 
-// ===== allow overriding output base (defaults to 'dist') =====
-const DEST_BASE = process.env.DEST_BASE || 'dist';
+const gulp         = require('gulp');
+const del          = require('del');
+const merge        = require('merge-stream');
+const autoprefixer = require('gulp-autoprefixer');
+const sourcemaps   = require('gulp-sourcemaps');
+const uglify       = require('gulp-uglify');
+const cssmin       = require('gulp-cssmin');
+const replace      = require('gulp-replace');
+const nodePath     = require('path');
 
-// keys / versions
-var key_version = `v1.0`;
-var key_production_version = `v1.0`;
-var g_key = `0`;
-var c_key = `0`;
-var p_key = `0`;
+// Dart Sass via gulp-sass
+const gulpSass = require('gulp-sass')(require('sass'));
 
-try {
-    const versionData = JSON.parse(fs.readFileSync('key.json', 'utf8'));
-    key_version = `${versionData.version}`;
-    key_production_version = `${versionData.production_version}`;
-    g_key = `${versionData.google_tag}`;
-    c_key = `${versionData.clarity}`;
-    p_key = `${versionData.Pixel}`;
-} catch (error) {}
+const DEST_BASE = process.env.DEST_BASE || '../../../public/admin/theme1';
 
-// =======================================================
-// ----------- START: Able Pro Theme Configuration -----------
-// =======================================================
-
-const theme_contrast = 'false'; // [ false , true ]
-const caption_show = 'true'; // [ false , true ]
-const preset_theme = 'preset-1'; // [ preset-1 to preset-10 ]
-const theme_layout = 'vertical'; // [ vertical, horizontal, color-header, compact, tab ]
-const dark_layout = 'false'; // [ false , true , default ]
-const rtl_layout = 'false'; // [ false , true ]
-const box_container = 'false'; // [ false , true ]
-const version = key_version;
-const production_version = key_production_version;
-
-if (rtl_layout == 'true') {
-    var rtlflag = 'rtl';
-} else {
-    var rtlflag = 'ltr';
-}
-
-if (theme_contrast == 'true') {
-    var contrastflag = 'true';
-} else {
-    var contrastflag = '';
-}
-
-if (dark_layout == 'true') {
-    var darklayoutflag = 'dark';
-} else {
-    var darklayoutflag = 'light';
-}
-
-const layout = {
-    pc_theme_contrast: contrastflag,
-    pc_caption_show: caption_show,
-    g_key: g_key,
-    c_key: c_key,
-    p_key: p_key,
-    pc_preset_theme: preset_theme,
-    pc_theme_layout: theme_layout,
-    pc_dark_layout: darklayoutflag,
-    pc_rtl_layout: rtl_layout,
-    pc_box_container: box_container,
-    pc_theme_version: version,
-    pc_production_version: production_version,
-    bodySetup:
-        'data-pc-preset="' +
-        preset_theme +
-        '" data-pc-sidebar-caption="' +
-        caption_show +
-        '" data-pc-layout="' +
-        theme_layout +
-        '" data-pc-direction="' +
-        rtlflag +
-        '" data-pc-theme_contrast="' +
-        contrastflag +
-        '" data-pc-theme="' +
-        darklayoutflag +
-        '"'
-};
-
-// =======================================================
-// ----------- END: Able Pro Theme Configuration -----------
-// =======================================================
-
-// all paths setup (parameterized)
-const path = {
+const paths = {
     src: {
-        html: 'src/html/**/*.html',
-        css: 'src/assets/scss/*.scss',
-        layoutjs: 'src/assets/js/*.js',
-        pagesjs: 'src/assets/js/pages/*.js',
-        images: 'src/assets/images/**/*.{jpg,png}'
+        scssEntries: [
+            'src/assets/scss/style.scss',
+            'src/assets/scss/style-preset.scss'
+        ],
+        scssAll: 'src/assets/scss/**/*.scss',
+        js: [
+            'src/assets/js/**/*.js',
+            '!src/assets/js/plugins/**'
+        ],
+        fonts:  'src/assets/fonts/**/*',
+        images: 'src/assets/images/**/*',
+        cssFallback: 'src/assets/css/*.css'
     },
-    destination: {
-        html: DEST_BASE,
-        css: `${DEST_BASE}/assets/css`,
-        layoutjs: `${DEST_BASE}/assets/js`,
-        pagesjs: `${DEST_BASE}/assets/js/pages`,
-        images: `${DEST_BASE}/assets/images`
+    dest: {
+        css:        `${DEST_BASE}/assets/css`,
+        js:         `${DEST_BASE}/assets/js`,
+        pluginsJs:  `${DEST_BASE}/assets/js/plugins`,
+        pluginsCss: `${DEST_BASE}/assets/css/plugins`,
+        fonts:      `${DEST_BASE}/assets/fonts`,
+        images:     `${DEST_BASE}/assets/images`
     }
 };
 
-// Common Sass options (the FIX is here)
+// Resolve bootstrap dir robustly (local or hoisted)
+function modDir(name) {
+    return nodePath.dirname(require.resolve(`${name}/package.json`));
+}
+const BOOTSTRAP_DIR = modDir('bootstrap');
+const BOOTSTRAP_SCSS = nodePath.join(BOOTSTRAP_DIR, 'scss');
+
+// Prebuild include paths (also set SASS_PATH for good measure)
+const includePaths = [
+    nodePath.resolve(__dirname),                 // <-- theme root, enables 'node_modules/...'
+    nodePath.resolve(__dirname, 'src/assets/scss'),
+    nodePath.resolve(__dirname, 'node_modules'),
+    nodePath.resolve(__dirname, '../../../../node_modules'),
+    BOOTSTRAP_SCSS
+];
+process.env.SASS_PATH = includePaths.join(nodePath.delimiter);
+
 const sassOptions = {
-    // Let Sass resolve `@import "bootstrap/scss/...";` and your local partials
-    includePaths: [
-        'node_modules',
-        'src/assets/scss'
-    ]
+    includePaths,
+    quietDeps: true,
+    silenceDeprecations: ['import', 'color-functions', 'global-builtin', 'legacy-js-api']
 };
 
-//  [ common ] task start
-gulp.task('browserSync', function () {
-    browsersync.init({
-        server: path.destination.html + '/',
-        ghostMode: false
-    });
-});
-
-gulp.task('cleandist', function (callback) {
-    del.sync([path.destination.html + '/**/*'], { force: true });
-    callback();
-});
-//  [ common ] task end
-
-// =======================================================
-// ----------- START: Development tasks -----------
-// =======================================================
-
-//  [ scss compiler ] start
-gulp.task('sass', function () {
-    return gulp
-        .src(path.src.css)
-        .pipe(sourcemaps.init())
-        .pipe(sass(sassOptions).on('error', sass.logError))
-        .pipe(autoprefixer())
-        .pipe(sourcemaps.write())
-        .pipe(gulp.dest(path.destination.css));
-});
-//  [ scss compiler ] end
-
-//  [ Copy assets ] start
-gulp.task('build-node-modules', function () {
-    const pluginCssDest = `${DEST_BASE}/assets/css/plugins`;
-    const pluginJsDest = `${DEST_BASE}/assets/js/plugins`;
-
-    var required_libs = {
-        js: [
-            'node_modules/bootstrap/dist/js/bootstrap.min.js',
-            'node_modules/@popperjs/core/dist/umd/popper.min.js',
-            'node_modules/simplebar/dist/simplebar.min.js',
-            'node_modules/feather-icons/dist/feather.min.js',
-            'node_modules/clipboard/dist/clipboard.min.js',
-            'node_modules/apexcharts/dist/apexcharts.min.js',
-            'node_modules/prismjs/prism.js',
-            'node_modules/sweetalert2/dist/sweetalert2.all.min.js',
-            'node_modules/vanillajs-datepicker/dist/js/datepicker-full.min.js',
-            'node_modules/notifier-js/dist/js/notifier.js',
-            'node_modules/bootstrap-slider/dist/bootstrap-slider.min.js',
-            'node_modules/tiny-slider/dist/min/tiny-slider.js',
-            'node_modules/intro.js/minified/intro.min.js',
-            'node_modules/vanillatree/vanillatree.min.js',
-            'node_modules/flatpickr/dist/flatpickr.min.js',
-            'node_modules/choices.js/public/assets/scripts/choices.min.js',
-            'node_modules/imask/dist/imask.min.js',
-            'node_modules/nouislider/dist/nouislider.min.js',
-            'node_modules/wnumb/wNumb.min.js',
-            'node_modules/bootstrap-switch-button/dist/bootstrap-switch-button.min.js',
-            'node_modules/type-ahead/src/type-ahead.min.js',
-            'node_modules/simplemde/dist/simplemde.min.js',
-            'node_modules/quill/dist/quill.js',
-            'node_modules/dropzone/dist/min/dropzone-amd-module.min.js',
-            'node_modules/uppy/dist/uppy.min.js',
-            'node_modules/formbouncerjs/dist/bouncer.min.js',
-            'node_modules/croppr/dist/croppr.min.js',
-            'node_modules/simple-datatables/dist/umd/simple-datatables.js',
-            'node_modules/simple-datatables/dist/module.js',
-            'node_modules/datatables.net/js/dataTables.min.js',
-            'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js',
-            'node_modules/datatables.net-select/js/dataTables.select.min.js',
-            'node_modules/datatables.net-autofill-bs5/js/autoFill.bootstrap5.min.js',
-            'node_modules/datatables.net-keytable-bs5/js/keyTable.bootstrap5.min.js',
-            'node_modules/datatables.net-scroller-bs5/js/scroller.bootstrap5.min.js',
-            'node_modules/datatables.net-responsive/js/dataTables.responsive.min.js',
-            'node_modules/datatables.net-responsive-bs5/js/responsive.bootstrap5.min.js',
-            'node_modules/datatables.net-keytable/js/dataTables.keyTable.min.js',
-            'node_modules/datatables.net-colreorder/js/dataTables.colReorder.min.js',
-            'node_modules/datatables.net-fixedheader/js/dataTables.fixedHeader.min.js',
-            'node_modules/datatables.net-fixedcolumns/js/dataTables.fixedColumns.min.js',
-            'node_modules/datatables.net-autofill/js/dataTables.autoFill.min.js',
-            'node_modules/datatables.net-buttons-bs5/js/buttons.bootstrap5.min.js',
-            'node_modules/datatables.net-buttons/js/dataTables.buttons.min.js',
-            'node_modules/datatables.net-buttons/js/buttons.colVis.min.js',
-            'node_modules/datatables.net-buttons/js/buttons.print.min.js',
-            'node_modules/datatables.net-buttons/js/buttons.html5.min.js',
-            'node_modules/datatables.net-rowreorder/js/dataTables.rowReorder.min.js',
-            'node_modules/pdfmake/build/pdfmake.min.js',
-            'node_modules/jszip/dist/jszip.min.js',
-            'node_modules/pdfmake/build/vfs_fonts.js',
-            'node_modules/dragula/dist/dragula.min.js',
-            'node_modules/fullcalendar/index.global.min.js',
-            'node_modules/wow.js/dist/wow.min.js',
-            'node_modules/isotope-layout/dist/isotope.pkgd.min.js',
-            'node_modules/fslightbox/index.js',
-            'node_modules/jsvectormap/dist/jsvectormap.min.js',
-            'node_modules/jsvectormap/dist/maps/world.js',
-            'node_modules/jsvectormap/dist/maps/world-merc.js',
-            'node_modules/star-rating.js/dist/star-rating.min.js',
-            'node_modules/vanilla-wizard/dist/js/wizard.min.js',
-            'node_modules/peity-vanilla/dist/peity-vanilla.min.js',
-            'node_modules/i18next/i18next.min.js',
-            'node_modules/i18next-http-backend/i18nextHttpBackend.min.js'
-        ],
-        css: [
-            'node_modules/bootstrap/dist/css/bootstrap.min.css',
-            'node_modules/animate.css/animate.min.css',
-            'node_modules/prismjs/themes/prism-coy.css',
-            'node_modules/vanillajs-datepicker/dist/css/datepicker-bs5.min.css',
-            'node_modules/notifier-js/dist/css/notifier.css',
-            'node_modules/bootstrap-slider/dist/css/bootstrap-slider.min.css',
-            'node_modules/tiny-slider/dist/tiny-slider.css',
-            'node_modules/intro.js/minified/introjs.min.css',
-            'node_modules/vanillatree/vanillatree.css',
-            'node_modules/flatpickr/dist/flatpickr.min.css',
-            'node_modules/nouislider/dist/nouislider.min.css',
-            'node_modules/bootstrap-switch-button/css/bootstrap-switch-button.min.css',
-            'node_modules/simplemde/dist/simplemde.min.css',
-            'node_modules/quill/dist/quill.core.css',
-            'node_modules/quill/dist/quill.snow.css',
-            'node_modules/quill/dist/quill.bubble.css',
-            'node_modules/dropzone/dist/min/dropzone.min.css',
-            'node_modules/uppy/dist/uppy.min.css',
-            'node_modules/croppr/dist/croppr.min.css',
-            'node_modules/datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css',
-            'node_modules/datatables.net-fixedcolumns-bs5/css/fixedColumns.bootstrap5.min.css',
-            'node_modules/datatables.net-colreorder-bs5/css/colReorder.bootstrap5.min.css',
-            'node_modules/datatables.net-fixedheader-bs5/css/fixedHeader.bootstrap5.min.css',
-            'node_modules/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css',
-            'node_modules/datatables.net-scroller-bs5/css/scroller.bootstrap5.min.css',
-            'node_modules/datatables.net-keytable-bs5/css/keyTable.bootstrap5.min.css',
-            'node_modules/datatables.net-autofill-bs5/css/autoFill.bootstrap5.min.css',
-            'node_modules/datatables.net-select-bs5/css/select.bootstrap5.min.css',
-            'node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css',
-            'node_modules/datatables.net-rowreorder-bs5/css/rowReorder.bootstrap5.min.css',
-            'node_modules/dragula/dist/dragula.min.css',
-            'node_modules/simple-datatables/dist/style.css',
-            'node_modules/jsvectormap/dist/jsvectormap.min.css',
-            'node_modules/star-rating.js/dist/star-rating.min.css'
-        ]
-    };
-    npmlodash(required_libs).forEach(function (assets, type) {
-        if (type == 'css') {
-            gulp.src(assets).pipe(gulp.dest(pluginCssDest));
-        } else {
-            gulp.src(assets).pipe(gulp.dest(pluginJsDest));
-        }
-    });
-
-    var required_editors = {
-        classic: ['node_modules/@ckeditor/ckeditor5-build-classic/build/ckeditor.js'],
-        inline: ['node_modules/@ckeditor/ckeditor5-build-inline/build/ckeditor.js'],
-        balloon: ['node_modules/@ckeditor/ckeditor5-build-balloon/build/ckeditor.js'],
-        document: ['node_modules/@ckeditor/ckeditor5-build-decoupled-document/build/ckeditor.js']
-    };
-    npmlodash(required_editors).forEach(function (assets, type) {
-        if (type == 'classic') {
-            gulp.src(assets).pipe(gulp.dest(pluginJsDest + '/ckeditor/classic'));
-        }
-        if (type == 'inline') {
-            gulp.src(assets).pipe(gulp.dest(pluginJsDest + '/ckeditor/inline'));
-        }
-        if (type == 'balloon') {
-            gulp.src(assets).pipe(gulp.dest(pluginJsDest + '/ckeditor/balloon'));
-        }
-        if (type == 'document') {
-            gulp.src(assets).pipe(gulp.dest(pluginJsDest + '/ckeditor/document'));
-        }
-    });
-
-    var cpyassets = gulp.src(['src/assets/**/*.*', '!src/assets/scss/**/*.*']).pipe(gulp.dest(DEST_BASE + '/assets'));
-    var cpytinymceassets = gulp.src(['node_modules/tinymce/**/*.*']).pipe(gulp.dest(pluginJsDest + '/tinymce'));
-    var cpytrumbowygassets = gulp.src(['node_modules/trumbowyg/dist/**/*.*']).pipe(gulp.dest(pluginJsDest + '/trumbowyg'));
-    return merge(cpyassets, cpytinymceassets, cpytrumbowygassets);
-});
-//  [ Copy assets ] end
-
-//  [ build html ] start
-gulp.task('build-html', function () {
-    return gulp
-        .src(path.src.html)
-        .pipe(
-            fileinclude({
-                context: layout,
-                prefix: '@@',
-                basepath: '@file',
-                indent: true
-            })
+// Replace @import "bootstrap/scss/xxx" → "@import '/abs/.../bootstrap/scss/xxx'"
+function rewriteBootstrapImports(stream) {
+    return stream.pipe(
+        replace(
+            /@import\s+["'](?:node_modules\/)?bootstrap\/scss\/([^"']+)["'];?/g,
+            (_m, file) => `@import "${nodePath.join(BOOTSTRAP_SCSS, file)}";`
         )
-        .pipe(gulp.dest(path.destination.html));
-});
-//  [ build html ] end
-
-//  [ build js ] start
-gulp.task('build-js', function () {
-    var layoutjs = gulp.src(path.src.layoutjs).pipe(gulp.dest(path.destination.layoutjs));
-    var pagesjs = gulp.src(path.src.pagesjs).pipe(gulp.dest(path.destination.pagesjs));
-    return merge(layoutjs, pagesjs);
-});
-//  [ build js ] end
-
-//  [ watch ] start
-gulp.task('watch', function () {
-    gulp.watch('src/assets/scss/**/*.scss', gulp.series('sass')).on('change', browsersync.reload);
-    gulp.watch('src/assets/js/**/*.js', gulp.series('build-js')).on('change', browsersync.reload);
-    gulp.watch('src/html/**/*.html', gulp.series('build-html')).on('change', browsersync.reload);
-});
-const compile = parallel('browserSync', 'watch');
-gulp.task('default', gulp.series('cleandist', 'build-node-modules', 'sass', 'build-js', 'build-html', compile));
-
-// =======================================================
-// ----------- END: Development tasks -----------
-// =======================================================
-
-// =======================================================
-// ----------- START: Production mode tasks -----------
-// =======================================================
-
-//  [ css minify ] start
-gulp.task('min-css', function () {
-    return gulp
-        .src(path.src.css)
-        .pipe(sass(sassOptions).on('error', sass.logError))
-        .pipe(autoprefixer())
-        .pipe(cssmin())
-        .pipe(gulp.dest(path.destination.css));
-});
-//  [ css minify ] end
-
-//  [ min-js ] start
-gulp.task('min-js', function () {
-    var layoutjs = gulp.src(path.src.layoutjs).pipe(uglify()).pipe(gulp.dest(path.destination.layoutjs));
-    var pagesjs = gulp.src(path.src.pagesjs).pipe(babel()).pipe(uglify()).pipe(gulp.dest(path.destination.pagesjs));
-    return merge(layoutjs, pagesjs);
-});
-//  [ min-js ] end
-
-//  [ minify html ] start
-gulp.task('min-html', function () {
-    return gulp
-        .src(path.src.html)
-        .pipe(
-            fileinclude({
-                context: layout,
-                prefix: '@@',
-                basepath: '@file',
-                indent: true
-            })
-        )
-        .pipe(
-            htmlmin({
-                collapseWhitespace: true
-            })
-        )
-        .pipe(gulp.dest(path.destination.html));
-});
-//  [ minify html ] end
-
-//  [ image optimizer ] start
-function compressImagesWithRetry(src, dest, retries = 40) {
-    return new Promise((resolve, reject) => {
-        const stream = gulp
-            .src(src)
-            .pipe(
-                smushit({
-                    verbose: true
-                })
-            )
-            .on('error', function (err) {
-                console.error('Error during image compression:', err.toString());
-                if (retries > 0) {
-                    compressImagesWithRetry(src, dest, retries - 1)
-                        .then(resolve)
-                        .catch(reject);
-                } else {
-                    reject(new Error('Max retries exceeded. Unable to compress image.'));
-                }
-            });
-
-        stream.on('end', () => resolve());
-        stream.pipe(gulp.dest(dest));
-    });
+    );
 }
-gulp.task('min-image', function () {
-    return compressImagesWithRetry(path.src.images, path.destination.images);
-});
-//  [ image optimizer ] end
 
-gulp.task('watch-minify', function () {
-    gulp.watch('src/assets/scss/**/*.scss', gulp.series('min-css'));
-    gulp.watch('src/assets/js/**/*.js', gulp.series('min-js'));
-    gulp.watch('src/html/**/*.html', gulp.series('min-html'));
+
+// 1) Clean everything
+gulp.task('clean', (cb) => {
+    del.sync([`${DEST_BASE}/**/*`], { force: true });
+    cb();
 });
 
-// build in production mode (parameterized DEST)
-gulp.task('build-prod', gulp.series('cleandist', 'build-node-modules', 'min-css', 'min-js', 'min-html'));
+// 2) Copy theme assets
+gulp.task('assets', function () {
+    const fonts  = gulp.src(paths.src.fonts).pipe(gulp.dest(paths.dest.fonts));
+    const images = gulp.src(paths.src.images).pipe(gulp.dest(paths.dest.images));
+    const jsCore = gulp.src(paths.src.js).pipe(gulp.dest(paths.dest.js)); // script.js, theme.js, icon/custom-font.js, etc.
+    return merge(fonts, images, jsCore);
+});
 
-// =======================================================
-// ----------- END: Production mode tasks -----------
-// =======================================================
+// 3) Vendors used by base-admin.blade (+ stacks)
+gulp.task('vendors', function () {
+    const vendorJs = gulp
+    .src([
+        'node_modules/@popperjs/core/dist/umd/popper.min.js',
+        'node_modules/bootstrap/dist/js/bootstrap.min.js',
+        'node_modules/simplebar/dist/simplebar.min.js',
+        'node_modules/feather-icons/dist/feather.min.js',
+        'node_modules/choices.js/public/assets/scripts/choices.min.js',
+        'node_modules/axios/dist/axios.js',
+        'node_modules/sweetalert2/dist/sweetalert2.js'
+    ])
+    .pipe(gulp.dest(paths.dest.pluginsJs));
+
+    const vendorCss = gulp
+    .src([
+        'node_modules/simplebar/dist/simplebar.min.css',
+        'node_modules/choices.js/public/assets/styles/choices.min.css',
+        'node_modules/sweetalert2/dist/sweetalert2.css'
+    ])
+    .pipe(gulp.dest(paths.dest.pluginsCss));
+
+    return merge(vendorJs, vendorCss);
+});
+
+// 4) SCSS → CSS (dev)
+gulp.task('sass', function () {
+    return rewriteBootstrapImports(
+        gulp.src(paths.src.scssEntries, { allowEmpty: true })
+    )
+    .pipe(sourcemaps.init())
+    .pipe(gulpSass(sassOptions).on('error', gulpSass.logError))
+    .pipe(autoprefixer())
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest(paths.dest.css));
+});
+
+// 5) SCSS → CSS (prod)
+gulp.task('min-css', function () {
+    return rewriteBootstrapImports(
+        gulp.src(paths.src.scssEntries, { allowEmpty: true })
+    )
+    .pipe(gulpSass(sassOptions).on('error', gulpSass.logError))
+    .pipe(autoprefixer())
+    .pipe(cssmin())
+    .pipe(gulp.dest(paths.dest.css));
+});
+
+// 6) Fallback: copy any prebuilt CSS if present
+gulp.task('css-fallback', function () {
+    return gulp.src(paths.src.cssFallback, { allowEmpty: true })
+    .pipe(gulp.dest(paths.dest.css));
+});
+
+// 7) (optional) Minify theme JS core
+gulp.task('min-js', function () {
+    return gulp.src(paths.src.js)
+    .pipe(uglify())
+    .pipe(gulp.dest(paths.dest.js));
+});
+
+// 8) Watch (dev)
+gulp.task('watch', function () {
+    gulp.watch(paths.src.scssAll, gulp.series('sass'));
+    gulp.watch(paths.src.js, gulp.series('assets'));
+    gulp.watch(paths.src.fonts, gulp.series('assets'));
+    gulp.watch(paths.src.images, gulp.series('assets'));
+    gulp.watch(paths.src.cssFallback, gulp.series('css-fallback'));
+});
+
+// Public tasks
+gulp.task('build', gulp.series('clean', 'assets', 'vendors', 'sass', 'css-fallback'));
+gulp.task('build-prod', gulp.series('clean', 'assets', 'vendors', 'min-css', 'css-fallback', 'min-js'));
