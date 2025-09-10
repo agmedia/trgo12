@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Back\Catalog\Product\Product;
 use App\Models\Back\Settings\Settings;
 use Illuminate\Support\Facades\Cache;
 
@@ -58,5 +59,24 @@ if ( ! function_exists('current_locale')) {
     function current_locale(): string
     {
         return session('locale', 'hr');
+    }
+}
+
+if ( ! function_exists('priceForVariant')) {
+    /**
+     * Calculate the price for a specific product variant.
+     *
+     * @param Product $product The product instance.
+     * @param object  $pivot   The pivot record containing variant-specific data.
+     *
+     * @return float The calculated price for the product variant.
+     */
+    function priceForVariant(Product $product, $pivot)
+    {
+        // $pivot je pivot record (npr. iz $product->optionValues->first()->pivot)
+        if (!is_null($pivot->price_override)) {
+            return $pivot->price_override;
+        }
+        return (float) $product->price + (float) $pivot->price_delta;
     }
 }

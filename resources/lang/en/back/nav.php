@@ -6,6 +6,7 @@ return [
     'catalog'    => 'Catalog',
     'categories' => 'Categories',
     'products'   => 'Products',
+    'options' => 'Product Options',
     'manufacturers' => 'Manufacturers',
 
     'orders'   => 'Orders',

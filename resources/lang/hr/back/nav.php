@@ -6,6 +6,7 @@ return [
     'catalog'    => 'Katalog',
     'categories' => 'Kategorije',
     'products'   => 'Artikli',
+    'options' => 'Opcije Artikla',
     'manufacturers' => 'Proizvođači',
     
     'orders'   => 'Narudžbe',

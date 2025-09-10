@@ -25,4 +25,7 @@ return [
 
     'manufacturer' => 'Manufacturer',
     'no_manufacturer' => '— No manufacturer —',
+
+    'options' => 'Options',
+    'options_help' => 'Select one or more option values (e.g., Color → Red, Size → L).',
 ];

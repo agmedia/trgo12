@@ -42,6 +42,11 @@ class StoreProductRequest extends FormRequest
             'categories.*'    => ['integer', 'exists:categories,id'],
         ];
 
+        if (config('settings.product_options_enabled')) {
+            $rules['option_values'] = ['nullable','array'];
+            $rules['option_values.*'] = ['integer','exists:product_option_values,id'];
+        }
+
         // Per-locale fields (uses config('app.locales'))
         foreach (config('app.locales') as $code => $label) {
             $lang = is_string($code) ? $code : (string) $label;
@@ -55,6 +60,24 @@ class StoreProductRequest extends FormRequest
                 // slug must be unique within its locale across all products
                 Rule::unique('product_translations', 'slug')->where('locale', $lang),
             ];
+        }
+
+        // Only when product options are enabled
+        if (config('settings.product_options_enabled')) {
+            // Expect structure:
+            // option_items: [
+            //   { value_id, product_image_id?, sku_full?, sku_suffix?, quantity, price_delta?, price_override?, is_default? },
+            //   ...
+            // ]
+            $rules['option_items'] = ['nullable','array'];
+            $rules['option_items.*.value_id']        = ['required','integer','exists:product_option_values,id'];
+            $rules['option_items.*.product_image_id']= ['nullable','integer','exists:product_images,id'];
+            $rules['option_items.*.sku_full']        = ['nullable','string','max:128', 'distinct', Rule::unique('product_option_value_product','sku_full')];
+            $rules['option_items.*.sku_suffix']      = ['nullable','string','max:32'];
+            $rules['option_items.*.quantity']        = ['required','integer','min:0'];
+            $rules['option_items.*.price_delta']     = ['nullable','numeric'];
+            $rules['option_items.*.price_override']  = ['nullable','numeric'];
+            $rules['option_items.*.is_default']      = ['sometimes','boolean'];
         }
 
         return $rules;

@@ -7,7 +7,7 @@ use App\Http\Requests\Back\Catalog\StoreProductRequest;
 use App\Http\Requests\Back\Catalog\UpdateProductRequest;
 use App\Models\Back\Catalog\Category;
 use App\Models\Back\Catalog\Manufacturer;
-use App\Models\Back\Catalog\Product\{Product, ProductTranslation};
+use App\Models\Back\Catalog\Product\{Product, ProductOption, ProductTranslation};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -43,15 +43,16 @@ class ProductController extends Controller
         $product    = new Product();
         $categories = $this->categoryList();
         $manufacturers = $this->manufacturerList();
+        $optionTree = $this->optionTreeForSelect();
 
-        return view('back.catalog.product.edit', compact('product', 'categories', 'manufacturers'));
+        return view('back.catalog.product.edit', compact('product', 'categories', 'manufacturers', 'optionTree'));
     }
 
 
     public function store(StoreProductRequest $request)
     {
         DB::transaction(function () use ($request, &$product) {
-            $payload = $request->safe()->except(['title', 'description', 'slug', 'categories', 'images']);
+            $payload = $request->safe()->except(['title', 'description', 'slug', 'categories', 'images', 'option_values']);
             $product = Product::create($payload);
 
             foreach (config('app.locales') as $code => $label) {
@@ -64,6 +65,26 @@ class ProductController extends Controller
                 ]);
             }
 
+            if (config('settings.product_options_enabled')) {
+                $items = collect($request->input('option_items', []))
+                    ->keyBy('value_id') // key: option_value_id
+                    ->map(function ($row) {
+                        return [
+                            'product_image_id' => $row['product_image_id'] ?? null,
+                            'sku_full'         => $row['sku_full'] ?? null,
+                            'sku_suffix'       => $row['sku_suffix'] ?? null,
+                            'quantity'         => (int) ($row['quantity'] ?? 0),
+                            'price_delta'      => (float) ($row['price_delta'] ?? 0),
+                            'price_override'   => $row['price_override'] !== null && $row['price_override'] !== '' ? (float) $row['price_override'] : null,
+                            'is_default'       => !empty($row['is_default']),
+                            'extra'            => $row['extra'] ?? null,
+                        ];
+                    })->all();
+
+                $product->optionValues()->sync($items); // sync with pivot data
+            }
+
+
             $product->categories()->sync($request->input('categories'));
         });
 
@@ -73,11 +94,12 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        $product->load(['translations', 'categories', 'images']);
+        $product->load(['translations','categories','images', 'optionValues'] + (config('settings.product_options_enabled') ? ['optionValues.option'] : []));
         $categories = $this->categoryList();
         $manufacturers = $this->manufacturerList();
+        $optionTree = $this->optionTreeForSelect();
 
-        return view('back.catalog.product.edit', compact('product', 'categories', 'manufacturers'));
+        return view('back.catalog.product.edit', compact('product', 'categories', 'manufacturers', 'optionTree'));
     }
 
 
@@ -96,6 +118,25 @@ class ProductController extends Controller
                         'description' => $request->input("description.$code"),
                     ]
                 );
+            }
+
+            if (config('settings.product_options_enabled')) {
+                $items = collect($request->input('option_items', []))
+                    ->keyBy('value_id') // key: option_value_id
+                    ->map(function ($row) {
+                        return [
+                            'product_image_id' => $row['product_image_id'] ?? null,
+                            'sku_full'         => $row['sku_full'] ?? null,
+                            'sku_suffix'       => $row['sku_suffix'] ?? null,
+                            'quantity'         => (int) ($row['quantity'] ?? 0),
+                            'price_delta'      => (float) ($row['price_delta'] ?? 0),
+                            'price_override'   => $row['price_override'] !== null && $row['price_override'] !== '' ? (float) $row['price_override'] : null,
+                            'is_default'       => !empty($row['is_default']),
+                            'extra'            => $row['extra'] ?? null,
+                        ];
+                    })->all();
+
+                $product->optionValues()->sync($items); // sync with pivot data
             }
 
             $product->categories()->sync($request->input('categories'));
@@ -142,5 +183,34 @@ class ProductController extends Controller
                            ->select('manufacturers.id', DB::raw('COALESCE(t1.title, t2.title) as t'))
                            ->orderBy('t')
                            ->pluck('t', 'manufacturers.id');
+    }
+
+
+
+    private function optionTreeForSelect(): array
+    {
+        if (!config('settings.product_options_enabled')) return [];
+
+        $locale   = app()->getLocale();
+        $fallback = config('app.fallback_locale', $locale);
+
+        // Get options + values with translated titles
+        return ProductOption::query()
+                            ->where('status', true)
+                            ->with(['optionValues' => function ($q) { $q->where('status', true)->orderBy('sort_order'); }])
+                            ->orderBy('sort_order')
+                            ->get()
+                            ->map(function ($opt) use ($locale, $fallback) {
+                                $optTitle = optional($opt->translation($locale))->title
+                                            ?? optional($opt->translation($fallback))->title
+                                               ?? "Option #{$opt->id}";
+                                $values = $opt->optionValues->map(function ($val) use ($locale, $fallback, $optTitle) {
+                                    $valTitle = optional($val->translation($locale))->title
+                                                ?? optional($val->translation($fallback))->title
+                                                   ?? "Value #{$val->id}";
+                                    return ['id' => $val->id, 'label' => $valTitle];
+                                });
+                                return ['id' => $opt->id, 'title' => $optTitle, 'values' => $values];
+                            })->all();
     }
 }

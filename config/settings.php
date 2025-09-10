@@ -3,7 +3,13 @@
 return [
 
     // ... your other settings ...
+    'product_options_enabled' => true,
+    //
+    'product_attributes_enabled' => true,
 
+    /**
+     *
+     */
     'payments' => [
         'providers' => [
             'cod' => [

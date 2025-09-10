@@ -82,6 +82,15 @@
                                 {{ __('back/nav.products') }}
                             </a>
                         </li>
+                        @if (config('settings.product_options_enabled'))
+                            <li class="pc-item {{ $is('catalog.options.*') ? 'active' : '' }}">
+                                <a class="pc-link"
+                                   href="{{ route('catalog.options.index') }}"
+                                   data-i18n="Products">
+                                    {{ __('back/nav.options') }}
+                                </a>
+                            </li>
+                        @endif
                         <li class="pc-item {{ $is('catalog.manufacturers.*') ? 'active' : '' }}">
                             <a class="pc-link"
                                href="{{ route('catalog.manufacturers.index') }}"

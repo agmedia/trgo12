@@ -44,6 +44,11 @@ class UpdateProductRequest extends FormRequest
             'categories.*'    => ['integer', 'exists:categories,id'],
         ];
 
+        if (config('settings.product_options_enabled')) {
+            $rules['option_values'] = ['nullable','array'];
+            $rules['option_values.*'] = ['integer','exists:product_option_values,id'];
+        }
+
         // Per-locale fields
         foreach (config('app.locales') as $code => $label) {
             $rules["title.$code"]       = ['required', 'string', 'max:255'];
@@ -57,6 +62,20 @@ class UpdateProductRequest extends FormRequest
                     ->where('locale', is_string($code) ? $code : (string) $label)
                     ->ignore($productId, 'product_id'),
             ];
+        }
+
+        if (config('settings.product_options_enabled')) {
+            // Isto kao u Store, ali sku_full mora biti unique u pivotu (bez ignore jer pivot nema id).
+            // Ako radiš edit postojećih pivot redova, pošalji "current_sku_full" pa custom rulem možeš ignorirati isti.
+            $rules['option_items'] = ['nullable','array'];
+            $rules['option_items.*.value_id']        = ['required','integer','exists:product_option_values,id'];
+            $rules['option_items.*.product_image_id']= ['nullable','integer','exists:product_images,id'];
+            $rules['option_items.*.sku_full']        = ['nullable','string','max:128','distinct', Rule::unique('product_option_value_product','sku_full')];
+            $rules['option_items.*.sku_suffix']      = ['nullable','string','max:32'];
+            $rules['option_items.*.quantity']        = ['required','integer','min:0'];
+            $rules['option_items.*.price_delta']     = ['nullable','numeric'];
+            $rules['option_items.*.price_override']  = ['nullable','numeric'];
+            $rules['option_items.*.is_default']      = ['sometimes','boolean'];
         }
 
         return $rules;

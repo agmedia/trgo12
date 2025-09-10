@@ -7,11 +7,10 @@
 
         <div class="row g-4">
             <div class="col-lg-8">
+
                 <div class="card">
                     <div class="card-header"><h6 class="mb-0">@lang('back/products.basic_info')</h6></div>
                     <div class="card-body">
-
-
                         <ul class="nav nav-tabs" role="tablist">
                             @php($locales = config('app.locales'))
                             @foreach($locales as $code => $label)
@@ -39,7 +38,6 @@
                             @endforeach
                         </div>
 
-
                         <div class="row g-3 mt-2">
                             <div class="col-sm-4">
                                 <label class="form-label">SKU</label>
@@ -56,10 +54,16 @@
                                 </div>
                             </div>
                         </div>
-
-
                     </div>
                 </div>
+
+                {{-- Options partial (shown only when feature flag is enabled) --}}
+                @includeWhen(config('settings.product_options_enabled'), 'back.catalog.product.partials.options', [
+                    'product' => $product,
+                    'optionTree' => $optionTree ?? [],
+                    'productImages' => $productImages ?? collect(),
+                ])
+
             </div>
 
 

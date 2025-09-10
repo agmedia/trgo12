@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Back\Catalog\CategoryController;
 use App\Http\Controllers\Back\Catalog\ManufacturerController;
+use App\Http\Controllers\Back\Catalog\OptionController;
 use App\Http\Controllers\Back\Catalog\ProductController;
 use App\Http\Controllers\Back\DashboardController;
 use App\Http\Controllers\Back\LocaleController;
@@ -41,6 +42,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::prefix('catalog')->as('catalog.')->group(function () {
         Route::resource('categories', CategoryController::class)->names('categories');
         Route::resource('products', ProductController::class)->names('products');
+        Route::resource('options', OptionController::class)->parameters(['options' => 'product_option'])->names('options');
         Route::resource('manufacturers', ManufacturerController::class)->names('manufacturers');
     });
     

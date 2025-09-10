@@ -53,4 +53,22 @@ class Product extends Model
         return $this->belongsTo(Manufacturer::class);
     }
 
+
+    public function optionValues()
+    {
+        return $this->belongsToMany(
+            ProductOptionValue::class,
+            'product_option_value_product',
+            'product_id',
+            'option_value_id'
+        )->withPivot([
+            'product_image_id',
+            'sku_full', 'sku_suffix',
+            'quantity',
+            'price_delta', 'price_override',
+            'is_default', 'extra',
+        ])->withTimestamps(); // ako dodaš timestamps na pivot
+    }
+
+
 }

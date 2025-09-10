@@ -25,4 +25,7 @@ return [
 
     'manufacturer' => 'Proizvođač',
     'no_manufacturer' => '— Bez proizvođača —',
+
+    'options' => 'Opcije',
+    'options_help' => 'Odaberite jednu ili više vrijednosti opcije (npr. Boja → Crvena, Veličina → L).',
 ];
