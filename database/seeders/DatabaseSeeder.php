@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             ManufacturerSeeder::class,
             ProductSeeder::class,
             ProductOptionSeeder::class,
+            ProductAttributeSeeder::class,
         ]);
         
         $this->command?->info('=== Database seed finished ===');

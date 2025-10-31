@@ -64,6 +64,11 @@
                     'productImages' => $productImages ?? collect(),
                 ])
 
+                @includeWhen(config('settings.product_attributes_enabled'), 'back.catalog.product.partials.attributes', [
+                  'product' => $product,
+                  'attributeTree' => $attributeTree ?? [],
+                ])
+
             </div>
 
 

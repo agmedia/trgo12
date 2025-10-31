@@ -28,4 +28,7 @@ return [
 
     'options' => 'Opcije',
     'options_help' => 'Odaberite jednu ili više vrijednosti opcije (npr. Boja → Crvena, Veličina → L).',
+
+    'attributes' => 'Atributi',
+    'attributes_help' => 'Odaberite vrijednosti atributa (npr. Materijal → Pamuk).',
 ];

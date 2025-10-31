@@ -6,7 +6,8 @@ return [
     'catalog'    => 'Catalog',
     'categories' => 'Categories',
     'products'   => 'Products',
-    'options' => 'Product Options',
+    'options' => 'Options',
+    'attributes' => 'Attributes',
     'manufacturers' => 'Manufacturers',
 
     'orders'   => 'Orders',
@@ -27,6 +28,7 @@ return [
     'settings_caption' => 'Settings',
     'my_profile'       => 'My Profile',
     'settings'         => 'Settings',
+    'application'         => 'Aplication',
     
     'shop' => 'Shop',
     

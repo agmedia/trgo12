@@ -91,6 +91,15 @@
                                 </a>
                             </li>
                         @endif
+                        @if (config('settings.product_attributes_enabled'))
+                            <li class="pc-item {{ $is('catalog.attributes.*') ? 'active' : '' }}">
+                                <a class="pc-link"
+                                   href="{{ route('catalog.attributes.index') }}"
+                                   data-i18n="Products">
+                                    {{ __('back/nav.attributes') }}
+                                </a>
+                            </li>
+                        @endif
                         <li class="pc-item {{ $is('catalog.manufacturers.*') ? 'active' : '' }}">
                             <a class="pc-link"
                                href="{{ route('catalog.manufacturers.index') }}"
@@ -135,15 +144,16 @@
                     </svg>
                 </li>
 
-                <li class="pc-item pc-hasmenu">
+                <li class="pc-item pc-hasmenu {{ request()->routeIs('app.settings.*') ? 'pc-trigger active' : '' }}">
                     <a href="#!" class="pc-link">
                         <span class="pc-micon"><svg class="pc-icon"><use xlink:href="#custom-setting-2"></use></svg></span>
                         <span class="pc-mtext" data-i18n="Dashboard">{{ __('back/nav.settings') }}</span>
                         <span class="pc-arrow"><i data-feather="chevron-right"></i></span>
                     </a>
                     <ul class="pc-submenu">
-                        <li class="pc-item"><a class="pc-link" href="../dashboard/index.html" data-i18n="Default">{{ __('back/nav.actions') }}</a></li>
-                        <li class="pc-item"><a class="pc-link" href="../dashboard/index.html" data-i18n="Default">{{ __('back/nav.actions') }}</a></li>
+                        <li class="pc-item {{ request()->routeIs('app.settings.*') ? 'active' : '' }}">
+                            <a class="pc-link" href="{{ route('app.settings.index') }}" data-i18n="Default">{{ __('back/nav.application') }}</a>
+                        </li>
                     </ul>
                 </li>
 

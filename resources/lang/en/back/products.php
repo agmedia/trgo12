@@ -28,4 +28,7 @@ return [
 
     'options' => 'Options',
     'options_help' => 'Select one or more option values (e.g., Color → Red, Size → L).',
+
+    'attributes' => 'Attributes',
+    'attributes_help' => 'Select attribute values (e.g., Material → Cotton).',
 ];

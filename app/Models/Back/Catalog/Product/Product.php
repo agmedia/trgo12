@@ -70,5 +70,15 @@ class Product extends Model
         ])->withTimestamps(); // ako dodaš timestamps na pivot
     }
 
-
+    public function attributeValues()
+    {
+        return $this->belongsToMany(
+            ProductAttributeValue::class,
+            'product_attribute_value_product',
+            'product_id',
+            'attribute_value_id'
+        )->withPivot([
+            'sort_order', 'share_percent', 'amount', 'unit', 'note', 'is_primary', 'extra',
+        ]);
+    }
 }

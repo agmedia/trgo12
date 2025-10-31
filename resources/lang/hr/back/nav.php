@@ -6,7 +6,8 @@ return [
     'catalog'    => 'Katalog',
     'categories' => 'Kategorije',
     'products'   => 'Artikli',
-    'options' => 'Opcije Artikla',
+    'options' => 'Opcije',
+    'attributes' => 'Atributi',
     'manufacturers' => 'Proizvođači',
     
     'orders'   => 'Narudžbe',
@@ -27,6 +28,7 @@ return [
     'settings_caption' => 'Postavke',
     'my_profile'       => 'Moj profil',
     'settings'         => 'Postavke',
+    'application'         => 'Aplikacija',
     
     'shop' => 'Trgovina',
     

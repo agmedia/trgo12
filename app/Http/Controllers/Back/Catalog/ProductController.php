@@ -7,7 +7,7 @@ use App\Http\Requests\Back\Catalog\StoreProductRequest;
 use App\Http\Requests\Back\Catalog\UpdateProductRequest;
 use App\Models\Back\Catalog\Category;
 use App\Models\Back\Catalog\Manufacturer;
-use App\Models\Back\Catalog\Product\{Product, ProductOption, ProductTranslation};
+use App\Models\Back\Catalog\Product\{Product, ProductAttribute, ProductOption, ProductTranslation};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -30,8 +30,8 @@ class ProductController extends Controller
             $query->where('manufacturer_id', $manufacturerId);
         }
 
-        $products   = $query->latest('id')->paginate(20)->appends($request->query());
-        $categories = $this->categoryList();
+        $products      = $query->latest('id')->paginate(20)->appends($request->query());
+        $categories    = $this->categoryList();
         $manufacturers = $this->manufacturerList();
 
         return view('back.catalog.product.index', compact('products', 'categories', 'manufacturers'));
@@ -40,10 +40,11 @@ class ProductController extends Controller
 
     public function create()
     {
-        $product    = new Product();
-        $categories = $this->categoryList();
+        $product       = new Product();
+        $categories    = $this->categoryList();
         $manufacturers = $this->manufacturerList();
-        $optionTree = $this->optionTreeForSelect();
+        $optionTree    = $this->optionTreeForSelect();
+        $attributeTree = config('settings.product_attributes_enabled') ? $this->attributeTreeForSelect() : [];
 
         return view('back.catalog.product.edit', compact('product', 'categories', 'manufacturers', 'optionTree'));
     }
@@ -76,7 +77,7 @@ class ProductController extends Controller
                             'quantity'         => (int) ($row['quantity'] ?? 0),
                             'price_delta'      => (float) ($row['price_delta'] ?? 0),
                             'price_override'   => $row['price_override'] !== null && $row['price_override'] !== '' ? (float) $row['price_override'] : null,
-                            'is_default'       => !empty($row['is_default']),
+                            'is_default'       => ! empty($row['is_default']),
                             'extra'            => $row['extra'] ?? null,
                         ];
                     })->all();
@@ -84,6 +85,23 @@ class ProductController extends Controller
                 $product->optionValues()->sync($items); // sync with pivot data
             }
 
+            if (config('settings.product_attributes_enabled')) {
+                $attrItems = collect($request->input('attribute_items', []))
+                    ->keyBy('value_id')   // ključ = attribute_value_id
+                    ->map(function ($row) {
+                        return [
+                            'sort_order'    => (int)($row['sort_order'] ?? 0),
+                            'share_percent' => $row['share_percent'] !== null && $row['share_percent'] !== '' ? (float)$row['share_percent'] : null,
+                            'amount'        => $row['amount'] !== null && $row['amount'] !== '' ? (float)$row['amount'] : null,
+                            'unit'          => $row['unit'] ?? null,
+                            'note'          => $row['note'] ?? null,
+                            'is_primary'    => !empty($row['is_primary']),
+                            'extra'         => $row['extra'] ?? null,
+                        ];
+                    })->all();
+
+                $product->attributeValues()->sync($attrItems);
+            }
 
             $product->categories()->sync($request->input('categories'));
         });
@@ -94,12 +112,25 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        $product->load(['translations','categories','images', 'optionValues'] + (config('settings.product_options_enabled') ? ['optionValues.option'] : []));
-        $categories = $this->categoryList();
-        $manufacturers = $this->manufacturerList();
-        $optionTree = $this->optionTreeForSelect();
+        $relations = ['translations', 'categories', 'images'];
 
-        return view('back.catalog.product.edit', compact('product', 'categories', 'manufacturers', 'optionTree'));
+        if (config('settings.product_options_enabled')) {
+            $relations[] = 'optionValues.option';
+        }
+
+        if (config('settings.product_attributes_enabled')) {
+            $relations[] = 'attributeValues.attribute.translations';
+        }
+
+        $product->load($relations);
+
+        //$product->load(['translations','categories','images', 'optionValues'] + (config('settings.product_options_enabled') ? ['optionValues.option'] : []));
+        $categories    = $this->categoryList();
+        $manufacturers = $this->manufacturerList();
+        $optionTree    = $this->optionTreeForSelect();
+        $attributeTree = $this->attributeTreeForSelect();
+
+        return view('back.catalog.product.edit', compact('product', 'categories', 'manufacturers', 'optionTree', 'attributeTree'));
     }
 
 
@@ -120,6 +151,8 @@ class ProductController extends Controller
                 );
             }
 
+            $product->categories()->sync($request->input('categories'));
+
             if (config('settings.product_options_enabled')) {
                 $items = collect($request->input('option_items', []))
                     ->keyBy('value_id') // key: option_value_id
@@ -131,7 +164,7 @@ class ProductController extends Controller
                             'quantity'         => (int) ($row['quantity'] ?? 0),
                             'price_delta'      => (float) ($row['price_delta'] ?? 0),
                             'price_override'   => $row['price_override'] !== null && $row['price_override'] !== '' ? (float) $row['price_override'] : null,
-                            'is_default'       => !empty($row['is_default']),
+                            'is_default'       => ! empty($row['is_default']),
                             'extra'            => $row['extra'] ?? null,
                         ];
                     })->all();
@@ -139,7 +172,25 @@ class ProductController extends Controller
                 $product->optionValues()->sync($items); // sync with pivot data
             }
 
-            $product->categories()->sync($request->input('categories'));
+
+            if (config('settings.product_attributes_enabled')) {
+                $attrItems = collect($request->input('attribute_items', []))
+                    ->keyBy('value_id')   // ključ = attribute_value_id
+                    ->map(function ($row) {
+                        return [
+                            'sort_order'    => (int)($row['sort_order'] ?? 0),
+                            'share_percent' => $row['share_percent'] !== null && $row['share_percent'] !== '' ? (float)$row['share_percent'] : null,
+                            'amount'        => $row['amount'] !== null && $row['amount'] !== '' ? (float)$row['amount'] : null,
+                            'unit'          => $row['unit'] ?? null,
+                            'note'          => $row['note'] ?? null,
+                            'is_primary'    => !empty($row['is_primary']),
+                            'extra'         => $row['extra'] ?? null,
+                        ];
+                    })->all();
+
+                $product->attributeValues()->sync($attrItems);
+            }
+
         });
 
         return redirect()->route('catalog.products.edit', $product)->with('success', 'Product updated.');
@@ -186,10 +237,11 @@ class ProductController extends Controller
     }
 
 
-
     private function optionTreeForSelect(): array
     {
-        if (!config('settings.product_options_enabled')) return [];
+        if ( ! config('settings.product_options_enabled')) {
+            return [];
+        }
 
         $locale   = app()->getLocale();
         $fallback = config('app.fallback_locale', $locale);
@@ -197,20 +249,56 @@ class ProductController extends Controller
         // Get options + values with translated titles
         return ProductOption::query()
                             ->where('status', true)
-                            ->with(['optionValues' => function ($q) { $q->where('status', true)->orderBy('sort_order'); }])
+                            ->with(['optionValues' => function ($q) {
+                                $q->where('status', true)->orderBy('sort_order');
+                            }])
                             ->orderBy('sort_order')
                             ->get()
                             ->map(function ($opt) use ($locale, $fallback) {
                                 $optTitle = optional($opt->translation($locale))->title
                                             ?? optional($opt->translation($fallback))->title
                                                ?? "Option #{$opt->id}";
-                                $values = $opt->optionValues->map(function ($val) use ($locale, $fallback, $optTitle) {
+                                $values   = $opt->optionValues->map(function ($val) use ($locale, $fallback, $optTitle) {
                                     $valTitle = optional($val->translation($locale))->title
                                                 ?? optional($val->translation($fallback))->title
                                                    ?? "Value #{$val->id}";
+
                                     return ['id' => $val->id, 'label' => $valTitle];
                                 });
+
                                 return ['id' => $opt->id, 'title' => $optTitle, 'values' => $values];
                             })->all();
+    }
+
+
+    private function attributeTreeForSelect(): array
+    {
+        if ( ! config('settings.product_attributes_enabled')) {
+            return [];
+        }
+
+        $locale   = app()->getLocale();
+        $fallback = config('app.fallback_locale', $locale);
+
+        return ProductAttribute::query()
+                               ->where('status', true)
+                               ->with(['translations', 'attributeValues.translations'])
+                               ->orderBy('sort_order')
+                               ->get()
+                               ->map(function ($attr) use ($locale, $fallback) {
+                                   $title = optional($attr->translations->firstWhere('locale', $locale))->title
+                                            ?? optional($attr->translations->firstWhere('locale', $fallback))->title
+                                               ?? ('Attribute #' . $attr->id);
+
+                                   $values = $attr->attributeValues->where('status', true)->sortBy('sort_order')->map(function ($val) use ($locale, $fallback) {
+                                       $label = optional($val->translations->firstWhere('locale', $locale))->title
+                                                ?? optional($val->translations->firstWhere('locale', $fallback))->title
+                                                   ?? ('Value #' . $val->id);
+
+                                       return ['id' => $val->id, 'label' => $label];
+                                   })->values();
+
+                                   return ['id' => $attr->id, 'title' => $title, 'values' => $values];
+                               })->all();
     }
 }

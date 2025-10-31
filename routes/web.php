@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\Back\Catalog\AttributeController;
 use App\Http\Controllers\Back\Catalog\CategoryController;
 use App\Http\Controllers\Back\Catalog\ManufacturerController;
 use App\Http\Controllers\Back\Catalog\OptionController;
 use App\Http\Controllers\Back\Catalog\ProductController;
 use App\Http\Controllers\Back\DashboardController;
 use App\Http\Controllers\Back\LocaleController;
+use App\Http\Controllers\Back\Settings\App\SettingsController;
 use App\Http\Controllers\Back\Settings\Shop\CurrencyPageController;
 use App\Http\Controllers\Api\V1\Settings\CurrencyController as ApiCurrencyController;
 use App\Http\Controllers\Back\Settings\Shop\GeozonePageController;
@@ -43,10 +45,14 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
         Route::resource('categories', CategoryController::class)->names('categories');
         Route::resource('products', ProductController::class)->names('products');
         Route::resource('options', OptionController::class)->parameters(['options' => 'product_option'])->names('options');
+        Route::resource('attributes', AttributeController::class)->parameters(['attributes' => 'product_attribute'])->names('attributes');
         Route::resource('manufacturers', ManufacturerController::class)->names('manufacturers');
     });
     
     Route::resource('users', UsersController::class)->names('users');
+
+    Route::get('app/settings',  [SettingsController::class, 'index'])->name('app.settings.index');
+    Route::post('app/settings', [SettingsController::class, 'update'])->name('app.settings.update');
 
     Route::get('profile', [UsersController::class, 'profile'])->name('users.profile');
     Route::put('profile', [UsersController::class, 'profileUpdate'])->name('users.profile.update');
