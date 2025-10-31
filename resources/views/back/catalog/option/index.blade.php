@@ -28,7 +28,7 @@
                             <tr>
                                 <td>{{ $o->id }}</td>
                                 <td>{{ optional($o->translation())->title ?? '—' }}</td>
-                                <td>{{ $o->values->count() }}</td>
+                                <td>{{ $o->optionValues->count() }}</td>
                                 <td>
                                     <span class="badge {{ $o->status ? 'bg-success':'bg-secondary' }}">{{ $o->status ? 'Active':'Inactive' }}</span>
                                 </td>

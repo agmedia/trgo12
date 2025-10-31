@@ -102,6 +102,65 @@
                                             <span>@lang('back/common.roles.administrator')</span>
                                         </span>
                                 </a>
+
+                                {{-- Poveznica na frontend --}}
+                                <a href="{{ url('/') }}" target="_blank" rel="noopener" class="dropdown-item">
+                                    <span>
+                                        <svg class="pc-icon text-muted me-2"><use xlink:href="#custom-story"></use></svg>
+                                        <span>Otvori početnu stranicu</span>
+                                    </span>
+                                </a>
+
+                                {{-- Očisti predmemoriju --}}
+                                <a href="#" class="dropdown-item"
+                                   onclick="event.preventDefault(); document.getElementById('clear-cache-form').submit();">
+                                        <span>
+                                            <svg class="pc-icon text-muted me-2"><use xlink:href="#custom-layer"></use></svg>
+                                            <span>Očisti predmemoriju</span>
+                                        </span>
+                                </a>
+                                <form id="clear-cache-form" action="{{ route('tools.cache.clear') }}" method="POST" class="d-none">
+                                    @csrf
+                                </form>
+
+                                {{-- Održavanje UKLJUČENO/ISKLJUČENO --}}
+                                @php $isDown = app()->isDownForMaintenance(); @endphp
+
+                                @if(!$isDown)
+                                    <a href="#" class="dropdown-item text-warning"
+                                       onclick="event.preventDefault(); if(confirm('Želite li uključiti način održavanja?')) document.getElementById('maintenance-on-form').submit();">
+                                            <span>
+                                                <svg class="pc-icon text-muted me-2"><use xlink:href="#custom-lock-outline"></use></svg>
+                                                <span>Održavanje UKLJUČENO</span>
+                                            </span>
+                                    </a>
+                                    <form id="maintenance-on-form" action="{{ route('tools.maintenance.on') }}" method="POST" class="d-none">
+                                        @csrf
+                                    </form>
+                                @else
+                                    <a href="#" class="dropdown-item text-success"
+                                       onclick="event.preventDefault(); document.getElementById('maintenance-off-form').submit();">
+                                            <span>
+                                                <svg class="pc-icon text-muted me-2"><use xlink:href="#custom-share-bold"></use></svg>
+                                                <span>Održavanje ISKLJUČENO</span>
+                                            </span>
+                                    </a>
+                                    <form id="maintenance-off-form" action="{{ route('tools.maintenance.off') }}" method="POST" class="d-none">
+                                        @csrf
+                                    </form>
+
+                                    @if(\Illuminate\Support\Facades\Cache::has('maintenance:secret'))
+                                        <div class="px-3 py-2">
+                                            <small class="text-muted">Zaobiđi:</small>
+                                            <div class="small">
+                                                <a href="{{ url(Cache::get('maintenance:secret')) }}" target="_blank" rel="noopener">
+                                                    {{ url(Cache::get('maintenance:secret')) }}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endif
+
                                 <hr class="border-secondary border-opacity-50" />
                                 <div class="d-grid">
                                     <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="btn btn-primary">

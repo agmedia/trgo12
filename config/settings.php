@@ -3,6 +3,7 @@
 return [
 
     // ... your other settings ...
+    'multilanguage_enabled' => false,
     'product_options_enabled' => true,
     //
     'product_attributes_enabled' => true,

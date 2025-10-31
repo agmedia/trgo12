@@ -11,7 +11,7 @@ if (!function_exists('lang_list')) {
     function lang_list(): \Illuminate\Support\Collection
     {
         return Cache::rememberForever('lang_list', function () {
-            return Settings::get('languages', 'list')->where('status', true);
+            return Settings::get('language', 'list')->where('status', true);
         });
     }
 }

@@ -19,7 +19,7 @@ class OptionController extends Controller
         abort_unless(config('settings.product_options_enabled'), 404);
 
         $q = ProductOption::query()
-                          ->with(['translations', 'values.translations'])
+                          ->with(['translations', 'optionValues.translations'])
                           ->orderBy('sort_order');
 
         if ($search = $request->string('q')->toString()) {

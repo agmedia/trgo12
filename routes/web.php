@@ -41,6 +41,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::get('/', fn () => redirect()->route('dashboard'))->name('admin.home');
     Route::post('/locale', LocaleController::class)->name('locale.switch');
 
+    // Tools (header dropdown actions)
+    Route::post('/tools/maintenance/on',  [DashboardController::class, 'maintenanceOn'])->name('tools.maintenance.on');
+    Route::post('/tools/maintenance/off', [DashboardController::class, 'maintenanceOff'])->name('tools.maintenance.off');
+    Route::post('/tools/cache/clear',     [DashboardController::class, 'clearCache'])->name('tools.cache.clear');
+
     Route::prefix('catalog')->as('catalog.')->group(function () {
         Route::resource('categories', CategoryController::class)->names('categories');
         Route::resource('products', ProductController::class)->names('products');

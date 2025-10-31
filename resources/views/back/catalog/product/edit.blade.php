@@ -11,14 +11,16 @@
                 <div class="card">
                     <div class="card-header"><h6 class="mb-0">@lang('back/products.basic_info')</h6></div>
                     <div class="card-body">
-                        <ul class="nav nav-tabs" role="tablist">
-                            @php($locales = config('app.locales'))
-                            @foreach($locales as $code => $label)
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link @if($loop->first) active @endif" data-bs-toggle="tab" data-bs-target="#tab-{{ $code }}" type="button" role="tab">{{ $label }}</button>
-                                </li>
-                            @endforeach
-                        </ul>
+                        @php($locales = config('app.locales'))
+                        @if (lang_list()->count() > 1 && config('settings.multilanguage_enabled'))
+                            <ul class="nav nav-tabs" role="tablist">
+                                @foreach($locales as $code => $label)
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link @if($loop->first) active @endif" data-bs-toggle="tab" data-bs-target="#tab-{{ $code }}" type="button" role="tab">{{ $label }}</button>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
                         <div class="tab-content border-start border-end border-bottom p-3">
                             @foreach($locales as $code => $label)
                                 <div class="tab-pane fade @if($loop->first) show active @endif" id="tab-{{ $code }}" role="tabpanel">
